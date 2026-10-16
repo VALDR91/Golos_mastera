@@ -1,393 +1,399 @@
-```html
 <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ГолосМастера — Сметчик v0.4</title>
+    <title>ГолосМастера v0.5 (Cal AI)</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- Telegram WebApp SDK -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
     <style>
-        body { background-color: #121214; color: #F3F4F6; font-family: system-ui, -apple-system, sans-serif; -webkit-tap-highlight-color: transparent; }
-        .pulse-active { animation: pulse 1.5s infinite; background-color: #EF4444 !important; }
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
-            70% { box-shadow: 0 0 0 18px rgba(239, 68, 68, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
-        }
-        @media print {
-            .no-print { display: none !important; }
-            body { background-color: #FFFFFF; color: #000000; }
-            .print-box { border: 1px solid #ccc !important; color: #000 !important; background: #fff !important; }
-        }
+        body { font-family: 'Inter', sans-serif; }
+        .font-mono-num { font-family: 'JetBrains Mono', monospace; }
+        .no-tap-highlight { -webkit-tap-highlight-color: transparent; }
     </style>
 </head>
-<body class="min-h-screen flex flex-col justify-between max-w-md mx-auto border-x border-zinc-800 shadow-2xl relative">
+<body class="bg-[#F4F4F6] text-[#09090B] min-h-screen pb-24 no-tap-highlight select-none">
 
-    <!-- Панель для удобного копирования кода с телефона (автоматически скрывается внутри Telegram) -->
-    <div id="devExportBar" class="p-3 bg-emerald-950 border-b border-emerald-700 flex flex-col gap-2 no-print">
-        <div class="flex gap-2">
-            <button onclick="openCodeDrawer()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-xs font-bold py-2.5 px-3 rounded-xl shadow flex items-center justify-center gap-1.5">
-                📋 Открыть и скопировать код v0.4 (для телефона)
-            </button>
-        </div>
-        <div id="codeDrawer" class="hidden space-y-2 pt-1">
-            <div class="text-[11px] text-emerald-200 leading-tight">
-                Код ниже <b>уже выделен</b>! Нажми кнопку ниже или зажми синий текст пальцем и выбери <b>«Копировать»</b>:
-            </div>
-            <textarea id="rawCodeArea" rows="4" readonly onclick="this.select()"
-                class="w-full p-2 bg-zinc-950 text-emerald-400 font-mono text-[10px] rounded-lg border border-emerald-600 focus:outline-none"></textarea>
-            <div class="flex gap-2">
-                <button onclick="forceCopyFromArea(this)" class="flex-1 bg-emerald-500 text-zinc-950 font-bold text-xs py-2 rounded-lg">
-                    ⚡ Скопировать в 1 клик
-                </button>
-                <button onclick="closeCodeDrawer()" class="bg-zinc-800 text-zinc-300 text-xs py-2 px-3 rounded-lg">
-                    Закрыть
-                </button>
-            </div>
-        </div>
+    <!-- ВЕРХНЯЯ СКРЫТАЯ ПАНЕЛЬ ДЛЯ КОПИРОВАНИЯ КОДА С ТЕЛЕФОНА -->
+    <div id="devExportBar" class="bg-emerald-800 text-emerald-100 px-4 py-2 text-xs flex justify-between items-center shadow-md">
+        <span class="truncate font-mono">v0.5 (Cal AI Style)</span>
+        <button onclick="copySourceCode()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3 py-1 rounded-lg shadow transition active:scale-95">
+            📋 Копировать код
+        </button>
     </div>
 
-    <header class="p-4 bg-zinc-900 border-b border-zinc-800 no-print space-y-3">
-        <div class="flex justify-between items-center">
-            <span class="text-xs font-bold uppercase tracking-wider text-orange-500">● ГолосМастера v0.4</span>
-            <span id="masterGreeting" class="text-xs text-zinc-400">Автосохранение включено 💾</span>
+    <!-- ШАПКА ПРИЛОЖЕНИЯ -->
+    <header class="bg-white border-b border-zinc-200 px-4 py-3 sticky top-0 z-20 flex justify-between items-center shadow-xs">
+        <div>
+            <h1 class="font-bold text-base text-zinc-900 flex items-center gap-1.5">
+                ⚡ ГолосМастера
+            </h1>
+            <p id="currentObjectSubtitle" class="text-xs text-zinc-500 truncate max-w-[220px]">Загрузка объекта...</p>
         </div>
-
-        <!-- Селектор объектов (Мультипроектность + Переименование) -->
-        <div class="flex gap-1.5">
-            <select id="projectSelect" onchange="switchProject(this.value)" 
-                class="flex-1 bg-zinc-800 border border-zinc-700 text-white text-sm rounded-xl px-3 py-2.5 font-medium focus:outline-none focus:border-orange-500 truncate">
-            </select>
-            <button onclick="openRenameProjectModal()" title="Переименовать объект"
-                class="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-3 py-2 rounded-xl text-sm border border-zinc-700">
-                ✏️
-            </button>
-            <button onclick="openNewProjectModal()" title="Новый объект"
-                class="bg-orange-600 hover:bg-orange-500 text-white px-3 py-2 rounded-xl text-sm font-bold shadow shrink-0">
-                + Объект
-            </button>
-            <button onclick="openDeleteProjectModal()" title="Удалить объект"
-                class="bg-zinc-800 hover:bg-red-900/60 text-zinc-400 hover:text-red-300 px-3 py-2 rounded-xl text-sm border border-zinc-700">
-                🗑️
-            </button>
-        </div>
-
-        <!-- Касса объекта -->
-        <div class="grid grid-cols-2 gap-3">
-            <div onclick="openAdvanceModal()" class="bg-zinc-800/70 p-3 rounded-xl border border-zinc-700 cursor-pointer active:scale-95 transition">
-                <div class="flex justify-between items-center">
-                    <span class="text-xs text-zinc-400">Аванс (изменить)</span>
-                    <span class="text-xs text-zinc-500">✏️</span>
-                </div>
-                <div id="topAdvance" class="text-xl font-bold text-emerald-400 mt-0.5">0 ₽</div>
-            </div>
-            <div class="bg-zinc-800/70 p-3 rounded-xl border border-zinc-700">
-                <div class="text-xs text-zinc-400">К доплате клиентом</div>
-                <div id="topBalance" class="text-xl font-bold text-orange-400 mt-0.5">0 ₽</div>
-            </div>
-        </div>
+        <button onclick="openObjectsModal()" class="bg-zinc-100 hover:bg-zinc-200 text-zinc-800 px-3 py-1.5 rounded-xl text-xs font-semibold border border-zinc-200 active:scale-95 transition">
+            📁 Объекты
+        </button>
     </header>
 
-    <main class="flex-1 p-4 overflow-y-auto space-y-4">
-        
-        <!-- Уведомление (Toast) -->
-        <div id="toastBanner" class="hidden bg-orange-950/95 border border-orange-500 text-orange-200 px-3.5 py-2.5 rounded-xl text-xs font-medium shadow-lg"></div>
+    <!-- ОСНОВНОЙ КОНТЕЙНЕР -->
+    <main class="max-w-md mx-auto p-4 space-y-4">
 
-        <!-- Поле голосового ввода -->
-        <div class="no-print bg-zinc-900/60 p-3 rounded-2xl border border-zinc-800">
-            <div class="flex justify-between items-center">
-                <label class="text-xs text-zinc-400 uppercase font-semibold">Голосовой ввод новых позиций:</label>
-                <button onclick="clearVoiceBox()" class="text-xs text-zinc-500 hover:text-zinc-300">Очистить поле</button>
-            </div>
-            <textarea id="voiceInput" rows="2" 
-                class="w-full mt-1.5 p-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-sm text-white focus:border-orange-500 focus:outline-none"
-                placeholder="Надиктуйте работы или нажмите «+ Тест»..."></textarea>
-            <div class="flex gap-2 mt-2">
-                <button onclick="loadDemoText()" class="text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-3 py-2 rounded-lg border border-zinc-700">
-                    📋 + Тестовая фраза
-                </button>
-                <button onclick="addFromVoiceText()" class="text-xs bg-orange-600 hover:bg-orange-500 text-white font-semibold px-4 py-2 rounded-lg ml-auto shadow">
-                    ➕ Разобрать в смету
-                </button>
-            </div>
-        </div>
-
-        <!-- Карточка готовой сметы -->
-        <div id="estimateCard" class="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 space-y-4 print-box">
-            <div class="flex justify-between items-start border-b border-zinc-800 pb-3 gap-2">
+        <!-- КАРТОЧКА БЮДЖЕТА (CAL AI STYLE) -->
+        <section class="bg-white border border-zinc-200/80 rounded-3xl p-5 shadow-sm space-y-4">
+            <div class="flex justify-between items-start">
                 <div>
-                    <h2 id="printProjectTitle" class="font-bold text-base leading-snug">Смета по объекту</h2>
-                    <p id="projectMeta" class="text-[11px] text-zinc-400 mt-0.5">Нажмите на любую строку, чтобы изменить её</p>
+                    <span class="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">Итого по сметe</span>
+                    <h2 id="objectTotalSum" class="text-3xl font-extrabold text-zinc-900 font-mono-num mt-0.5">0 ₽</h2>
                 </div>
-                <div class="flex gap-1.5 no-print shrink-0">
-                    <button onclick="copyTextEstimate()" title="Скопировать текст для WhatsApp / Telegram" class="bg-zinc-800 hover:bg-zinc-700 text-xs px-2.5 py-2 rounded-lg border border-zinc-700 flex items-center gap-1 text-emerald-400 font-medium">
-                        💬 Текст
-                    </button>
-                    <button onclick="window.print()" class="bg-zinc-800 hover:bg-zinc-700 text-xs px-2.5 py-2 rounded-lg border border-zinc-700 flex items-center gap-1">
-                        📄 PDF
-                    </button>
+                <div class="bg-orange-50 text-orange-600 px-2.5 py-1 rounded-full text-[11px] font-bold">
+                    PRO Смета
                 </div>
             </div>
 
-            <!-- 1. Таблица работ -->
-            <div>
-                <div class="flex justify-between items-center mb-2">
-                    <h3 class="text-xs font-bold uppercase text-orange-400">1. Выполненные работы («Руки»)</h3>
-                    <button onclick="openItemModal('work')" class="no-print text-xs bg-zinc-800 hover:bg-zinc-700 text-orange-400 px-2.5 py-1 rounded-md border border-zinc-700">
-                        + Работа
-                    </button>
+            <!-- Аванс и остаток -->
+            <div class="grid grid-cols-2 gap-2 pt-2 border-t border-zinc-100 text-xs">
+                <div class="bg-zinc-50 p-2.5 rounded-2xl border border-zinc-100 cursor-pointer" onclick="editAdvance()">
+                    <span class="text-zinc-400 block text-[10px] uppercase">Аванс</span>
+                    <strong id="advanceDisplay" class="text-zinc-800 font-mono-num text-sm">0 ₽</strong>
                 </div>
-                <div id="worksList" class="space-y-2 text-sm"></div>
+                <div class="bg-zinc-50 p-2.5 rounded-2xl border border-zinc-100">
+                    <span class="text-zinc-400 block text-[10px] uppercase">Остаток</span>
+                    <strong id="balanceDisplay" class="text-orange-600 font-mono-num text-sm">0 ₽</strong>
+                </div>
             </div>
+        </section>
 
-            <!-- 2. Таблица материалов -->
-            <div class="pt-3 border-t border-zinc-800">
-                <div class="flex justify-between items-center mb-2">
-                    <h3 class="text-xs font-bold uppercase text-sky-400">2. Черновые материалы и закупки</h3>
-                    <button onclick="openItemModal('material')" class="no-print text-xs bg-zinc-800 hover:bg-zinc-700 text-sky-400 px-2.5 py-1 rounded-md border border-zinc-700">
-                        + Материал
-                    </button>
-                </div>
-                <div id="materialsList" class="space-y-2 text-sm"></div>
-            </div>
+        <!-- ПАНЕЛЬ ГОЛОСОВОГО ВВОДА -->
+        <section class="bg-white border border-zinc-200/80 rounded-3xl p-4 shadow-sm text-center">
+            <button id="micBtn" onclick="toggleSpeechRecognition()" class="w-full bg-zinc-900 hover:bg-zinc-800 active:scale-98 text-white font-bold py-4 px-6 rounded-2xl shadow-md flex items-center justify-center gap-3 transition text-sm">
+                <span id="micIcon" class="text-lg">🎙️</span>
+                <span id="micText">Надиктовать позицию</span>
+            </button>
+            <div id="speechStatus" class="text-xs text-zinc-400 mt-2 min-h-[16px]">Нажмите кнопку и говорите смету...</div>
+        </section>
 
-            <!-- Итоги + очистка -->
-            <div class="pt-3 border-t border-zinc-700 space-y-1.5 text-sm">
-                <div class="flex justify-between"><span>Итого по работам:</span><span id="sumWorks" class="font-semibold">0 ₽</span></div>
-                <div class="flex justify-between"><span>Итого по материалам:</span><span id="sumMaterials" class="font-semibold">0 ₽</span></div>
-                <div class="flex justify-between text-emerald-400"><span>Получен аванс:</span><span id="sumAdvance" class="font-semibold">0 ₽</span></div>
-                <div class="flex justify-between text-lg font-bold pt-2 border-t border-zinc-800 text-orange-400">
-                    <span>ИТОГО К ОПЛАТЕ:</span><span id="sumTotal">0 ₽</span>
-                </div>
-                <div class="pt-2 flex justify-between items-center no-print">
-                    <button onclick="openClearItemsModal()" class="text-[11px] text-zinc-500 hover:text-red-400">
-                        🧹 Очистить все строки сметы
-                    </button>
-                    <button onclick="copyTextEstimate()" class="text-xs text-emerald-400 hover:underline font-medium">
-                        📋 Скопировать смету для отправки клиенту
-                    </button>
-                </div>
+        <!-- СПИСОК ПОЗИЦИЙ -->
+        <section class="space-y-3">
+            <div class="flex justify-between items-center px-1">
+                <h3 class="text-xs font-semibold uppercase tracking-wider text-zinc-400">Позиции в смете</h3>
+                <button onclick="openAddManualModal()" class="text-xs text-orange-600 font-bold hover:underline">+ Ручной ввод</button>
             </div>
-        </div>
+            
+            <div id="itemsList" class="space-y-2">
+                <!-- Сюда рендерятся позиции -->
+            </div>
+        </section>
+
+        <!-- КНОПКИ ЭКСПОРТА -->
+        <section class="grid grid-cols-2 gap-3 pt-2">
+            <button onclick="exportText()" class="bg-white hover:bg-zinc-50 border border-zinc-200 text-zinc-800 py-3.5 px-4 rounded-2xl text-xs font-semibold flex items-center justify-center gap-2 transition shadow-xs active:scale-95">
+                💬 Текст для мессенджеров
+            </button>
+            <button onclick="exportPDF()" class="bg-white hover:bg-zinc-50 border border-zinc-200 text-zinc-800 py-3.5 px-4 rounded-2xl text-xs font-semibold flex items-center justify-center gap-2 transition shadow-xs active:scale-95">
+                📄 Печать / PDF
+            </button>
+        </section>
+
     </main>
 
-    <!-- Модальное окно -->
-    <div id="appModal" class="hidden fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 no-print">
-        <div class="bg-zinc-900 border border-zinc-700 rounded-2xl p-4 w-full max-w-sm space-y-3 shadow-2xl">
-            <h3 id="modalTitle" class="font-bold text-base text-white">Заголовок</h3>
-            <div id="modalBody" class="space-y-2.5 text-sm"></div>
-            <div class="flex gap-2 pt-2">
-                <button onclick="closeModal()" class="flex-1 py-2.5 rounded-xl bg-zinc-800 text-zinc-300 text-xs font-semibold">Отмена</button>
-                <button id="modalConfirmBtn" class="flex-1 py-2.5 rounded-xl bg-orange-600 text-white text-xs font-bold">Сохранить</button>
+    <!-- МОДАЛЬНОЕ ОКНО: УПРАВЛЕНИЕ ОБЪЕКТАМИ -->
+    <div id="objectsModal" class="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white border border-zinc-200 w-full max-w-sm rounded-3xl p-5 space-y-4 shadow-2xl">
+            <div class="flex justify-between items-center">
+                <h3 class="font-bold text-base text-zinc-900">Список объектов</h3>
+                <button onclick="closeObjectsModal()" class="text-zinc-400 hover:text-zinc-700 text-sm font-bold p-1">✕</button>
+            </div>
+            <div id="objectsListModal" class="space-y-2 max-h-60 overflow-y-auto">
+                <!-- Список объектов -->
+            </div>
+            <div class="pt-2 border-t border-zinc-100 flex gap-2">
+                <input type="text" id="newObjectNameInput" placeholder="Например: ЖК Люблинский парк" class="flex-1 bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2.5 text-xs text-zinc-900 focus:outline-none focus:border-orange-500">
+                <button onclick="createNewObject()" class="bg-orange-600 hover:bg-orange-500 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition">Создать</button>
             </div>
         </div>
     </div>
 
-    <footer class="p-4 bg-zinc-900 border-t border-zinc-800 no-print">
-        <button id="micButton" onclick="toggleSpeech()" 
-            class="w-full py-4 bg-orange-600 hover:bg-orange-500 active:scale-95 transition-all rounded-2xl font-bold text-lg shadow-lg flex flex-col items-center justify-center gap-0.5">
-            <span id="micIcon">🎙️ НАДИКТОВАТЬ ПОЗИЦИИ</span>
-            <span id="micSub" class="text-xs font-normal text-orange-200">Нажмите, скажите фразу и добавьте в смету</span>
-        </button>
-    </footer>
+    <!-- МОДАЛЬНОЕ ОКНО: РЕДАКТИРОВАНИЕ ПОЗИЦИИ -->
+    <div id="editItemModal" class="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white border border-zinc-200 w-full max-w-sm rounded-3xl p-5 space-y-3 shadow-2xl">
+            <div class="flex justify-between items-center">
+                <h3 class="font-bold text-base text-zinc-900">Редактировать позицию</h3>
+                <button onclick="closeEditModal()" class="text-zinc-400 hover:text-zinc-700 text-sm font-bold p-1">✕</button>
+            </div>
+            <input type="hidden" id="editIndex">
+            <div>
+                <label class="text-[10px] uppercase text-zinc-400 font-bold">Название</label>
+                <input type="text" id="editName" class="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2.5 text-xs text-zinc-900 mt-1 focus:outline-none focus:border-orange-500">
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+                <div>
+                    <label class="text-[10px] uppercase text-zinc-400 font-bold">Количество</label>
+                    <input type="number" step="any" id="editQty" class="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2.5 text-xs text-zinc-900 mt-1 focus:outline-none focus:border-orange-500">
+                </div>
+                <div>
+                    <label class="text-[10px] uppercase text-zinc-400 font-bold">Цена за ед. (₽)</label>
+                    <input type="number" id="editPrice" class="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2.5 text-xs text-zinc-900 mt-1 focus:outline-none focus:border-orange-500">
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+                <div>
+                    <label class="text-[10px] uppercase text-zinc-400 font-bold">Раздел</label>
+                    <select id="editCategory" class="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2.5 text-xs text-zinc-900 mt-1 focus:outline-none focus:border-orange-500">
+                        <option value="Работа">Работа</option>
+                        <option value="Материал">Материал</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-[10px] uppercase text-zinc-400 font-bold">Ед. изм.</label>
+                    <select id="editUnit" class="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2.5 text-xs text-zinc-900 mt-1 focus:outline-none focus:border-orange-500">
+                        <option value="м²">м²</option>
+                        <option value="пог. м">пог. м</option>
+                        <option value="шт">шт</option>
+                        <option value="мешк.">мешк.</option>
+                        <option value="точка">точка</option>
+                        <option value="рейс">рейс</option>
+                    </select>
+                </div>
+            </div>
+            <div class="flex gap-2 pt-2">
+                <button onclick="deleteCurrentItem()" class="bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-xs font-bold transition">Удалить</button>
+                <button onclick="saveEditedItem()" class="flex-1 bg-zinc-900 hover:bg-zinc-800 text-white py-3 rounded-xl text-xs font-bold transition">Сохранить</button>
+            </div>
+        </div>
+    </div>
 
+    <!-- ЛОГИКА ПРИЛОЖЕНИЯ -->
     <script>
-        // --- 0. ЭКСПОРТ КОДА С ТЕЛЕФОНА ---
-        function getCleanHTMLSource() {
-            const clone = document.documentElement.cloneNode(true);
-            const bar = clone.querySelector('#devExportBar');
-            if (bar) bar.remove();
-            return '<!DOCTYPE html>\n' + clone.outerHTML;
-        }
-
-        function openCodeDrawer() {
-            const drawer = document.getElementById('codeDrawer');
-            const area = document.getElementById('rawCodeArea');
-            area.value = getCleanHTMLSource();
-            drawer.classList.remove('hidden');
-            area.focus();
-            area.select();
-            area.setSelectionRange(0, 999999);
-            try {
-                document.execCommand('copy');
-                showToast('✅ Код v0.4 выделен и скопирован!');
-            } catch (e) {}
-        }
-
-        function closeCodeDrawer() {
-            document.getElementById('codeDrawer').classList.add('hidden');
-        }
-
-        function forceCopyFromArea(btn) {
-            const area = document.getElementById('rawCodeArea');
-            area.focus();
-            area.select();
-            area.setSelectionRange(0, 999999);
-            let ok = false;
-            try { ok = document.execCommand('copy'); } catch (e) {}
-            if (navigator.clipboard && !ok) {
-                navigator.clipboard.writeText(area.value).catch(() => {});
-            }
-            btn.innerText = '✅ Скопировано в буфер!';
-            setTimeout(() => btn.innerText = '⚡ Скопировать в 1 клик', 2500);
-        }
-
-        const tg = window.Telegram?.WebApp;
-        if (tg && tg.initData) {
-            const bar = document.getElementById('devExportBar');
-            if (bar) bar.style.display = 'none';
-        }
-
-        if (tg) {
-            tg.ready();
-            tg.expand();
-            const user = tg.initDataUnsafe?.user;
-            if (user?.first_name) {
-                document.getElementById('masterGreeting').innerText = `Мастер: ${user.first_name} 💾`;
-            }
-        }
-
-        function haptic(type = 'light') {
-            if (tg?.HapticFeedback) {
-                tg.HapticFeedback.impactOccurred(type);
-            }
-        }
-
-        function showToast(msg) {
-            const t = document.getElementById('toastBanner');
-            t.innerText = msg;
-            t.classList.remove('hidden');
-            setTimeout(() => t.classList.add('hidden'), 3800);
-        }
-
-        // --- 1. СОСТОЯНИЕ И ПАМЯТЬ (С ПОДДЕРЖКОЙ ЕДИНИЦ ИЗМЕРЕНИЯ) ---
-        const STORAGE_KEY = 'golos_mastera_projects_v03';
-        const UNITS = ['м²', 'пог. м', 'шт', 'мешк.', 'рейс', 'точка', 'упак.', 'услуга'];
-
-        let state = {
-            currentProjectId: 'proj_1',
-            projects: [
-                {
-                    id: 'proj_1',
-                    name: 'ЖК Люблинский Парк (Сергей)',
-                    updatedAt: new Date().toLocaleDateString('ru-RU'),
-                    advance: 10000,
-                    items: [
-                        { id: 'item_1', type: 'work', name: 'Демонтаж плитки', qty: 15, unit: 'м²', price: 600 },
-                        { id: 'item_2', type: 'work', name: 'Грунтовка стен', qty: 40, unit: 'м²', price: 150 },
-                        { id: 'item_3', type: 'material', name: 'Штукатурка Ротбанд', qty: 4, unit: 'мешк.', price: 550 }
-                    ]
-                }
-            ]
-        };
-
-        function loadState() {
-            try {
-                const saved = localStorage.getItem(STORAGE_KEY);
-                if (saved) {
-                    const parsed = JSON.parse(saved);
-                    if (parsed.projects && parsed.projects.length > 0) {
-                        state = parsed;
-                        // Миграция старых позиций без unit
-                        state.projects.forEach(p => {
-                            p.items.forEach(i => {
-                                if (!i.unit) i.unit = i.type === 'material' ? 'шт' : 'м²';
-                            });
-                        });
-                    }
-                }
-            } catch (e) { console.error(e); }
-            renderAll();
-        }
-
-        function saveState() {
-            try {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-            } catch (e) {}
-            renderAll();
-        }
-
-        function getCurrentProject() {
-            return state.projects.find(p => p.id === state.currentProjectId) || state.projects[0];
-        }
-
-        function switchProject(id) {
-            haptic('light');
-            state.currentProjectId = id;
-            saveState();
-        }
-
-        function closeModal() {
-            document.getElementById('appModal').classList.add('hidden');
-        }
-
-        // --- 2. УПРАВЛЕНИЕ ОБЪЕКТАМИ ---
-        function openNewProjectModal() {
-            haptic('medium');
-            document.getElementById('modalTitle').innerText = 'Новый объект';
-            document.getElementById('modalBody').innerHTML = `
-                <label class="text-xs text-zinc-400">Название квартиры / имя клиента:</label>
-                <input id="modalInputName" type="text" placeholder="Например: Квартира на Ленина (Иван)" 
-                    class="w-full p-2.5 bg-zinc-950 border border-zinc-700 rounded-xl text-white text-sm focus:outline-none focus:border-orange-500">
-            `;
-            const btn = document.getElementById('modalConfirmBtn');
-            btn.innerText = 'Создать';
-            btn.onclick = () => {
-                const name = document.getElementById('modalInputName').value.trim();
-                if (!name) return;
-                const newId = 'proj_' + Date.now();
-                state.projects.push({
-                    id: newId,
-                    name,
-                    updatedAt: new Date().toLocaleDateString('ru-RU'),
+        let db = JSON.parse(localStorage.getItem('golos_master_cal_ai')) || {
+            currentObjId: 'obj_1',
+            objects: {
+                'obj_1': {
+                    name: 'ЖК Люблинский парк',
                     advance: 0,
                     items: []
+                }
+            }
+        };
+
+        function saveDB() {
+            localStorage.setItem('golos_master_cal_ai', JSON.stringify(db));
+            renderApp();
+        }
+
+        function getActiveObj() {
+            if (!db.objects[db.currentObjId]) {
+                db.currentObjId = Object.keys(db.objects)[0] || 'obj_1';
+            }
+            if (!db.objects[db.currentObjId]) {
+                db.objects['obj_1'] = { name: 'Мой объект', advance: 0, items: [] };
+                db.currentObjId = 'obj_1';
+            }
+            return db.objects[db.currentObjId];
+        }
+
+        function renderApp() {
+            let obj = getActiveObj();
+            document.getElementById('currentObjectSubtitle').innerText = obj.name;
+
+            let itemsList = document.getElementById('itemsList');
+            itemsList.innerHTML = '';
+            let totalSum = 0;
+
+            if (obj.items.length === 0) {
+                itemsList.innerHTML = `<div class="text-center py-10 text-zinc-400 text-xs">В смете пока нет позиций.<br>Нажмите кнопку микрофона или ручной ввод.</div>`;
+            } else {
+                obj.items.forEach((item, index) => {
+                    let total = item.qty * item.price;
+                    totalSum += total;
+                    itemsList.innerHTML += `
+                        <div onclick="openEditModal(${index})" class="bg-white border border-zinc-200/80 rounded-2xl p-3.5 flex justify-between items-center active:border-orange-500 transition cursor-pointer shadow-xs">
+                            <div>
+                                <div class="font-semibold text-xs text-zinc-900">${item.name}</div>
+                                <div class="text-[10px] text-zinc-400 mt-0.5"><span class="text-orange-600 font-medium">${item.category}</span> • ${item.qty} ${item.unit} × ${item.price} ₽</div>
+                            </div>
+                            <div class="text-right font-bold text-xs text-zinc-900 font-mono-num">
+                                ${total.toLocaleString()} ₽
+                            </div>
+                        </div>
+                    `;
                 });
-                state.currentProjectId = newId;
-                closeModal();
-                saveState();
-                showToast(`📁 Создан объект «${name}»`);
-            };
-            document.getElementById('appModal').classList.remove('hidden');
+            }
+
+            document.getElementById('objectTotalSum').innerText = totalSum.toLocaleString() + ' ₽';
+            document.getElementById('advanceDisplay').innerText = (obj.advance || 0).toLocaleString() + ' ₽';
+            let balance = totalSum - (obj.advance || 0);
+            document.getElementById('balanceDisplay').innerText = balance.toLocaleString() + ' ₽';
         }
 
-        function openRenameProjectModal() {
-            haptic('light');
-            const proj = getCurrentProject();
-            document.getElementById('modalTitle').innerText = 'Переименовать объект';
-            document.getElementById('modalBody').innerHTML = `
-                <label class="text-xs text-zinc-400">Новое название объекта:</label>
-                <input id="modalRenameInput" type="text" value="${proj.name}" 
-                    class="w-full p-2.5 bg-zinc-950 border border-zinc-700 rounded-xl text-white text-sm focus:outline-none focus:border-orange-500">
-            `;
-            const btn = document.getElementById('modalConfirmBtn');
-            btn.innerText = 'Сохранить';
-            btn.onclick = () => {
-                const newName = document.getElementById('modalRenameInput').value.trim();
-                if (!newName) return;
-                proj.name = newName;
-                proj.updatedAt = new Date().toLocaleDateString('ru-RU');
-                closeModal();
-                saveState();
-                showToast('✏️ Название объекта обновлено');
-            };
-            document.getElementById('appModal').classList.remove('hidden');
+        function openObjectsModal() {
+            let list = document.getElementById('objectsListModal');
+            list.innerHTML = '';
+            for (let oId in db.objects) {
+                let o = db.objects[oId];
+                let isCurrent = oId === db.currentObjId;
+                list.innerHTML += `
+                    <div onclick="switchObject('${oId}')" class="p-3 rounded-xl border flex justify-between items-center cursor-pointer transition ${isCurrent ? 'bg-orange-50 border-orange-200 text-orange-900 font-semibold' : 'bg-zinc-50 border-zinc-200 text-zinc-700'}">
+                        <span class="text-xs">${o.name}</span>
+                        ${isCurrent ? '<span class="text-[10px] text-orange-600 font-bold">Активный</span>' : ''}
+                    </div>
+                `;
+            }
+            document.getElementById('objectsModal').classList.remove('hidden');
         }
 
-        function openDeleteProjectModal() {
-            if (state.projects.length <= 1) {
-                showToast('Нельзя удалить единственный объект! Вы можете очистить строки сметы внизу.');
+        function closeObjectsModal() {
+            document.getElementById('objectsModal').classList.add('hidden');
+        }
+
+        function switchObject(oId) {
+            db.currentObjId = oId;
+            closeObjectsModal();
+            saveDB();
+        }
+
+        function createNewObject() {
+            let name = document.getElementById('newObjectNameInput').value.trim();
+            if (!name) return;
+            let oId = 'obj_' + Date.now();
+            db.objects[oId] = { name: name, advance: 0, items: [] };
+            db.currentObjId = oId;
+            document.getElementById('newObjectNameInput').value = '';
+            closeObjectsModal();
+            saveDB();
+        }
+
+        function editAdvance() {
+            let obj = getActiveObj();
+            let val = prompt('Введите сумму полученного аванса:', obj.advance || 0);
+            if (val !== null) {
+                obj.advance = parseFloat(val) || 0;
+                saveDB();
+            }
+        }
+
+        function openEditModal(index) {
+            let obj = getActiveObj();
+            let item = obj.items[index];
+            document.getElementById('editIndex').value = index;
+            document.getElementById('editName').value = item.name;
+            document.getElementById('editQty').value = item.qty;
+            document.getElementById('editPrice').value = item.price;
+            document.getElementById('editCategory').value = item.category;
+            document.getElementById('editUnit').value = item.unit;
+            document.getElementById('editItemModal').classList.remove('hidden');
+        }
+
+        function closeEditModal() {
+            document.getElementById('editItemModal').classList.add('hidden');
+        }
+
+        function saveEditedItem() {
+            let index = parseInt(document.getElementById('editIndex').value);
+            let obj = getActiveObj();
+            obj.items[index] = {
+                name: document.getElementById('editName').value,
+                qty: parseFloat(document.getElementById('editQty').value) || 0,
+                price: parseFloat(document.getElementById('editPrice').value) || 0,
+                category: document.getElementById('editCategory').value,
+                unit: document.getElementById('editUnit').value
+            };
+            closeEditModal();
+            saveDB();
+        }
+
+        function deleteCurrentItem() {
+            let index = parseInt(document.getElementById('editIndex').value);
+            let obj = getActiveObj();
+            obj.items.splice(index, 1);
+            closeEditModal();
+            saveDB();
+        }
+
+        function openAddManualModal() {
+            let obj = getActiveObj();
+            obj.items.push({ name: 'Новая позиция', qty: 1, price: 1000, category: 'Работа', unit: 'м²' });
+            saveDB();
+            openEditModal(obj.items.length - 1);
+        }
+
+        let recognition = null;
+        let isRecording = false;
+
+        function toggleSpeechRecognition() {
+            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                alert('Голосовой ввод недоступен в этом браузере.');
                 return;
             }
-            const proj = getCurrentProject();
-            document.getElementById('modalTitle').innerText = 'Удалить объект?';
-            document.getElementById('modalBody').innerHTML = `
-                <p class="text-zinc-300 text-xs">Вы уверены, что хотите безвозвратно удалить объект <b>«${proj.name}»</b>?</p>
-            `;
-            const btn = document.getElementById('modalConfirmBtn');
-            btn.innerText = 'Удалить';
-            btn.onclick = () => {
-                haptic('heavy');
-                state.projects = state.projects.filter(p => p.id !== proj.id);
-                state.cur
+
+            if (isRecording) {
+                stopSpeech();
+                return;
+            }
+
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.lang = 'ru-RU';
+            recognition.interimResults = false;
+            recognition.maxAlternatives = 1;
+
+            recognition.onstart = () => {
+                isRecording = true;
+                document.getElementById('micBtn').className = "w-full bg-red-600 hover:bg-red-500 active:scale-98 text-white font-bold py-4 px-6 rounded-2xl shadow-md flex items-center justify-center gap-3 transition text-sm animate-pulse";
+                document.getElementById('micIcon').innerText = "⏹️";
+                document.getElementById('micText').innerText = "Слушаю...";
+                document.getElementById('speechStatus').innerText = "Говорите позицию сметы...";
+            };
+
+            recognition.onresult = (event) => {
+                let text = event.results[0][0].transcript;
+                document.getElementById('speechStatus').innerText = `Распознано: "${text}"`;
+                parseVoiceText(text);
+            };
+
+            recognition.onerror = () => {
+                document.getElementById('speechStatus').innerText = "Ошибка распознавания.";
+                stopSpeech();
+            };
+
+            recognition.onend = () => {
+                stopSpeech();
+            };
+
+            recognition.start();
+        }
+
+        function stopSpeech() {
+            isRecording = false;
+            document.getElementById('micBtn').className = "w-full bg-zinc-900 hover:bg-zinc-800 active:scale-98 text-white font-bold py-4 px-6 rounded-2xl shadow-md flex items-center justify-center gap-3 transition text-sm";
+            document.getElementById('micIcon').innerText = "🎙️";
+            document.getElementById('micText').innerText = "Надиктовать позицию";
+            if (recognition) {
+                try { recognition.stop(); } catch(e){}
+            }
+        }
+
+        function parseVoiceText(text) {
+            let obj = getActiveObj();
+            obj.items.push({
+                name: text,
+                qty: 1,
+                price: 0,
+                category: 'Работа',
+                unit: 'м²'
+            });
+            saveDB();
+            openEditModal(obj.items.length - 1);
+        }
+
+        function exportText() {
+            let obj = getActiveObj();
+            let text = `📋 Смета: ${obj.name}\n`;
+            let sum = 0;
+            obj.items.forEach(i => {
+                let t = i.qty * i.price;
+                sum += t;
+                text += `• ${i.name}: ${i.qty}
