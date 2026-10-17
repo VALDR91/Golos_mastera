@@ -19,19 +19,10 @@
 
         const YM_COUNTER_ID = 0;
         if (YM_COUNTER_ID > 0) {
-            ym(YM_COUNTER_ID, "init", {
-                clickmap: true,
-                trackLinks: true,
-                accurateTrackBounce: true,
-                webvisor: true
-            });
+            ym(YM_COUNTER_ID, "init", { clickmap: true, trackLinks: true, accurateTrackBounce: true, webvisor: true });
         }
         function trackGoal(goalName) {
-            try {
-                if (YM_COUNTER_ID > 0 && typeof ym === 'function') {
-                    ym(YM_COUNTER_ID, 'reachGoal', goalName);
-                }
-            } catch (e) {}
+            try { if (YM_COUNTER_ID > 0 && typeof ym === 'function') ym(YM_COUNTER_ID, 'reachGoal', goalName); } catch (e) {}
         }
     </script>
 
@@ -91,18 +82,19 @@
                 </div>
             </div>
 
-            <div class="flex items-center gap-1.5">
+            <!-- Правый блок с фиксированными отступами (исправлен заезд иконки) -->
+            <div class="flex items-center gap-1.5 shrink-0">
                 <button onclick="openProjectSheet()" class="bg-white px-2.5 py-2 rounded-2xl flex items-center gap-1.5 active:scale-95 transition shadow-sm border border-zinc-200">
                     <div class="text-left">
                         <div class="text-[9px] text-zinc-500 uppercase font-extrabold tracking-wider">Объект</div>
-                        <div id="currentProjName" class="text-xs font-extrabold text-zinc-950 truncate max-w-[92px]">ЖК Сити Парк, 84</div>
+                        <div id="currentProjName" class="text-xs font-extrabold text-zinc-950 truncate max-w-[85px]">ЖК Сити Парк</div>
                     </div>
-                    <i data-lucide="chevron-down" class="w-4 h-4 text-zinc-950"></i>
+                    <i data-lucide="chevron-down" class="w-4 h-4 text-zinc-950 shrink-0"></i>
                 </button>
-                <button onclick="openFeedbackModal()" class="w-10 h-10 rounded-2xl bg-white text-zinc-950 border border-zinc-200 flex items-center justify-center active:scale-95 transition shadow-sm" title="Оставить отзыв или предложение">
+                <button onclick="openFeedbackModal()" class="w-10 h-10 rounded-2xl bg-white text-zinc-950 border border-zinc-200 flex items-center justify-center active:scale-95 transition shadow-sm shrink-0" title="Оставить отзыв или предложение">
                     <i data-lucide="message-square-heart" class="w-4 h-4 text-rose-500"></i>
                 </button>
-                <button onclick="openNewProjectQuick()" class="w-10 h-10 rounded-2xl bg-zinc-950 text-white flex items-center justify-center active:scale-95 transition shadow-sm" title="Добавить новый объект">
+                <button onclick="openNewProjectQuick()" class="w-10 h-10 rounded-2xl bg-zinc-950 text-white flex items-center justify-center active:scale-95 transition shadow-sm shrink-0" title="Добавить новый объект">
                     <i data-lucide="folder-plus" class="w-4 h-4"></i>
                 </button>
             </div>
@@ -121,18 +113,20 @@
                     </div>
                 </div>
 
+                <!-- Большая выразительная кнопка микрофона (замена старой и единственная) -->
                 <div class="relative w-24 h-24 flex items-center justify-center shrink-0">
                     <svg class="w-24 h-24 -rotate-90" viewBox="0 0 80 80">
                         <circle cx="40" cy="40" r="34" stroke="#F4F4F5" stroke-width="6" fill="none" />
                         <circle id="ringCircle" cx="40" cy="40" r="34" stroke="#09090B" stroke-width="6" fill="none" stroke-dasharray="213" stroke-dashoffset="45" stroke-linecap="round" class="ring-progress" />
                     </svg>
-                    <button id="heroMicBtn" onclick="triggerHeroVoiceInput()" class="absolute inset-2 rounded-full bg-zinc-950 text-white flex flex-col items-center justify-center active:scale-90 transition shadow-lg hover:bg-zinc-800" title="Быстрый голосовой ввод сметы">
-                        <i data-lucide="mic" class="w-6 h-6 text-red-500"></i>
-                        <span id="heroMicLabel" class="text-[10px] font-extrabold uppercase tracking-wider mt-0.5">Голос</span>
+                    <button id="heroMicBtn" onclick="triggerHeroVoiceInput()" class="absolute inset-2 rounded-full bg-gradient-to-tr from-zinc-950 via-zinc-900 to-zinc-800 text-white flex flex-col items-center justify-center active:scale-90 transition shadow-xl hover:shadow-2xl border-2 border-zinc-700" title="Нажать и говорить">
+                        <i data-lucide="mic" class="w-7 h-7 text-red-500 animate-pulse"></i>
+                        <span id="heroMicLabel" class="text-[10px] font-extrabold uppercase tracking-widest mt-0.5 text-zinc-200">Голос</span>
                     </button>
                 </div>
             </div>
 
+            <!-- 3 мини-виджета -->
             <div class="grid grid-cols-3 gap-2 mt-5">
                 <div class="bg-[#F4F4F6] p-3 rounded-2xl border border-zinc-200/70">
                     <div class="flex items-center gap-1.5 text-[11px] font-bold text-zinc-600">
@@ -162,6 +156,7 @@
                 </div>
             </div>
 
+            <!-- Надбавки и скидка -->
             <div class="grid grid-cols-2 gap-2 mt-2.5 pt-2.5 border-t border-zinc-100">
                 <button id="overheadBtn" onclick="toggleOverhead()" class="py-2.5 px-3 rounded-xl border text-xs font-extrabold flex items-center justify-between transition active:scale-95">
                     <span class="flex items-center gap-1.5">
@@ -189,7 +184,7 @@
                     </div>
                     <div>
                         <span class="text-sm font-extrabold text-zinc-950 block leading-none">Голосовой ввод сметы</span>
-                        <span id="micStatusText" class="text-[11px] font-bold text-zinc-500">Нажмите «Голос» или микрофон на клавиатуре</span>
+                        <span id="micStatusText" class="text-[11px] font-bold text-zinc-500">Нажмите кнопку сверху или «Говорить» ниже</span>
                     </div>
                 </div>
                 <button onclick="loadDemoPhrase()" class="text-xs px-2.5 py-1.5 rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-900 font-extrabold transition shrink-0">
@@ -197,21 +192,14 @@
                 </button>
             </div>
 
-            <div id="webviewVoiceHint" class="hidden mb-2.5 p-3 rounded-2xl bg-amber-50 border border-amber-200 text-amber-950 text-xs font-bold flex items-start gap-2">
-                <i data-lucide="info" class="w-4 h-4 text-amber-600 shrink-0 mt-0.5"></i>
-                <div>
-                    Курсор установлен в поле ввода! Нажмите на <b>иконку микрофона 🎤 на клавиатуре телефона</b> и продиктуйте позицию.
-                </div>
-            </div>
-
             <textarea id="voiceInput" rows="2" 
                 class="w-full p-3.5 bg-[#F4F4F6] border border-zinc-200 rounded-2xl text-sm text-zinc-950 font-semibold focus:outline-none focus:border-zinc-950 transition"
-                placeholder="Скажите или напишите: «Шпаклевка стен 20 м2 по 450»..."></textarea>
+                placeholder="Диктуйте: «Шпаклевка стен 20 м2 по 450»..."></textarea>
 
             <div class="grid grid-cols-5 gap-2 mt-2.5">
                 <button id="micBtn" onclick="toggleVoiceRecording()" class="col-span-2 text-xs bg-[#F4F4F6] hover:bg-zinc-200 text-zinc-950 border border-zinc-300 font-extrabold px-3 py-3.5 rounded-2xl flex items-center justify-center gap-1.5 active:scale-95 transition uppercase tracking-wider">
                     <i data-lucide="mic" class="w-4 h-4 text-red-500"></i>
-                    <span id="micBtnLabel">🎤 Голос</span>
+                    <span id="micBtnLabel">🎤 Говорить</span>
                 </button>
 
                 <button onclick="parseLocalText()" class="col-span-3 text-xs cal-btn-black font-extrabold px-4 py-3.5 rounded-2xl flex items-center justify-center gap-1.5 active:scale-95 transition uppercase tracking-wider">
@@ -221,6 +209,7 @@
             </div>
         </div>
 
+        <!-- Списки работ и материалов -->
         <div class="space-y-2.5">
             <div class="flex items-center justify-between px-1">
                 <h2 class="text-base font-extrabold text-zinc-950 tracking-tight">1. Работы</h2>
@@ -285,12 +274,12 @@
 
     <div class="no-print fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md z-20 px-4 pb-4 pt-2 bg-gradient-to-t from-[#F4F4F6] via-[#F4F4F6]/95 to-transparent">
         <div class="bg-white/95 backdrop-blur-md rounded-[24px] p-2 flex items-center gap-1.5 shadow-xl border border-zinc-200/80">
-            <button onclick="shareToMAX()" class="flex-1 py-3.5 px-3 rounded-2xl cal-btn-black active:scale-95 transition flex items-center justify-center gap-2 text-xs font-extrabold uppercase tracking-wider">
+            <button onclick="openShareSheet()" class="flex-1 py-3.5 px-3 rounded-2xl cal-btn-black active:scale-95 transition flex items-center justify-center gap-2 text-xs font-extrabold uppercase tracking-wider">
                 <i data-lucide="send" class="w-4 h-4"></i>
-                <span>В MAX / Отправить</span>
+                <span>Отправить</span>
             </button>
-            <button onclick="openShareSheet()" class="p-3.5 rounded-2xl bg-[#F4F4F6] hover:bg-zinc-200 text-zinc-950 active:scale-95 transition" title="Все способы отправки и PDF">
-                <i data-lucide="share-2" class="w-5 h-5"></i>
+            <button onclick="printOfficialEstimate()" class="p-3.5 rounded-2xl bg-[#F4F4F6] hover:bg-zinc-200 text-zinc-950 active:scale-95 transition" title="Сформировать PDF-бланк">
+                <i data-lucide="printer" class="w-5 h-5"></i>
             </button>
             <button onclick="copyTextEstimate()" class="p-3.5 rounded-2xl bg-[#F4F4F6] hover:bg-zinc-200 text-zinc-950 active:scale-95 transition" title="Скопировать текст сметы">
                 <i data-lucide="copy" class="w-5 h-5"></i>
@@ -523,48 +512,49 @@
             showToast(val > 0 ? `Скидка -${val}% применена` : 'Скидка убрана');
         }
 
+        // === ПРЯМОЙ ГОЛОСОВОЙ ВВОД СРАЗУ ПО КЛИКУ (v0.72) ===
         let recognition = null;
         let isRecording = false;
-        let silenceGuardTimer = null;
 
         if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
             try {
                 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
                 recognition = new SpeechRecognition();
                 recognition.lang = 'ru-RU';
-                recognition.interimResults = false;
+                recognition.interimResults = true;
                 recognition.maxAlternatives = 1;
 
                 recognition.onstart = () => {
                     isRecording = true;
                     updateMicUI(true);
-                    clearTimeout(silenceGuardTimer);
-                    silenceGuardTimer = setTimeout(() => {
-                        if (isRecording) {
-                            try { recognition.stop(); } catch (e) {}
-                            activateKeyboardVoiceFallback('В мессенджере используйте 🎤 на клавиатуре!');
-                        }
-                    }, 6000);
                 };
 
                 recognition.onresult = (event) => {
-                    clearTimeout(silenceGuardTimer);
-                    const transcript = event.results[0][0].transcript;
+                    let interim = '';
+                    let final = '';
+                    for (let i = event.resultIndex; i < event.results.length; ++i) {
+                        if (event.results[i].isFinal) {
+                            final += event.results[i][0].transcript;
+                        } else {
+                            interim += event.results[i][0].transcript;
+                        }
+                    }
                     const input = document.getElementById('voiceInput');
-                    input.value = input.value ? input.value + ' ' + transcript : transcript;
-                    document.getElementById('webviewVoiceHint').classList.add('hidden');
-                    showToast('🎤 Распознано!');
+                    if (final) {
+                        input.value = input.value ? input.value + ' ' + final : final;
+                        showToast('🎤 Распознано!');
+                    } else if (interim) {
+                        input.value = interim;
+                    }
                 };
 
-                recognition.onerror = () => {
-                    clearTimeout(silenceGuardTimer);
+                recognition.onerror = (err) => {
                     isRecording = false;
                     updateMicUI(false);
-                    activateKeyboardVoiceFallback('Нажмите 🎤 на клавиатуре телефона для диктовки');
+                    showToast('Не удалось распознать голос. Попробуйте еще раз');
                 };
 
                 recognition.onend = () => {
-                    clearTimeout(silenceGuardTimer);
                     isRecording = false;
                     updateMicUI(false);
                 };
@@ -575,27 +565,7 @@
 
         function triggerHeroVoiceInput() {
             trackGoal('hero_voice_click');
-            const voiceCard = document.getElementById('voiceCard');
-            if (voiceCard) {
-                voiceCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
             toggleVoiceRecording();
-        }
-
-        function activateKeyboardVoiceFallback(toastMsg) {
-            const input = document.getElementById('voiceInput');
-            const hint = document.getElementById('webviewVoiceHint');
-            const card = document.getElementById('voiceCard');
-
-            if (hint) hint.classList.remove('hidden');
-            if (card) {
-                card.classList.add('ring-2', 'ring-amber-500');
-                setTimeout(() => card.classList.remove('ring-2', 'ring-amber-500'), 3500);
-            }
-            if (input) {
-                input.focus();
-            }
-            showToast(toastMsg || 'Нажмите 🎤 на клавиатуре телефона!');
         }
 
         function toggleVoiceRecording() {
@@ -603,22 +573,19 @@
             const input = document.getElementById('voiceInput');
             if (input) input.focus();
 
-            const ua = navigator.userAgent || '';
-            const isWebView = /wv|WebView|Telegram|MAX/i.test(ua);
-
-            if (!recognition || isWebView) {
-                activateKeyboardVoiceFallback('Диктуйте через 🎤 на клавиатуре телефона!');
+            if (!recognition) {
+                showToast('Голосовой ввод не поддерживается в этом браузере');
                 return;
             }
 
             if (isRecording) {
-                clearTimeout(silenceGuardTimer);
-                recognition.stop();
+                try { recognition.stop(); } catch (e) {}
             } else {
                 try {
                     recognition.start();
+                    showToast('🎤 Слушаю вас, говорите...');
                 } catch (e) {
-                    activateKeyboardVoiceFallback('Диктуйте через 🎤 на клавиатуре телефона!');
+                    try { recognition.stop(); recognition.start(); } catch (err) {}
                 }
             }
         }
@@ -633,20 +600,24 @@
             const heroLabel = document.getElementById('heroMicLabel');
 
             if (active) {
-                btn.className = 'col-span-2 text-xs bg-red-600 text-white font-extrabold px-3 py-3.5 rounded-2xl flex items-center justify-center gap-1.5 animate-pulse uppercase tracking-wider';
-                label.innerText = 'Слушаю...';
-                dot.className = 'w-7 h-7 rounded-full bg-red-600 text-white flex items-center justify-center animate-ping shrink-0';
-                statusText.innerText = 'Говорите фразу или нажмите 🎤 на клавиатуре...';
-                card.classList.add('ring-2', 'ring-red-500');
-                if (heroBtn) heroBtn.className = 'absolute inset-2 rounded-full bg-red-600 text-white flex flex-col items-center justify-center animate-pulse shadow-lg';
+                if (btn) {
+                    btn.className = 'col-span-2 text-xs bg-red-600 text-white font-extrabold px-3 py-3.5 rounded-2xl flex items-center justify-center gap-1.5 animate-pulse uppercase tracking-wider';
+                    if (label) label.innerText = 'Слушаю...';
+                }
+                if (dot) dot.className = 'w-7 h-7 rounded-full bg-red-600 text-white flex items-center justify-center animate-ping shrink-0';
+                if (statusText) statusText.innerText = 'Слушаю вашу речь... Говорите позицию';
+                if (card) card.classList.add('ring-2', 'ring-red-500');
+                if (heroBtn) heroBtn.className = 'absolute inset-2 rounded-full bg-red-600 text-white flex flex-col items-center justify-center animate-pulse shadow-2xl border-2 border-red-400';
                 if (heroLabel) heroLabel.innerText = 'Слушаю';
             } else {
-                btn.className = 'col-span-2 text-xs bg-[#F4F4F6] hover:bg-zinc-200 text-zinc-950 border border-zinc-300 font-extrabold px-3 py-3.5 rounded-2xl flex items-center justify-center gap-1.5 active:scale-95 transition uppercase tracking-wider';
-                label.innerText = '🎤 Голос';
-                dot.className = 'w-7 h-7 rounded-full bg-zinc-950 text-white flex items-center justify-center shrink-0';
-                statusText.innerText = 'Нажмите «Голос» или микрофон на клавиатуре';
-                card.classList.remove('ring-2', 'ring-red-500');
-                if (heroBtn) heroBtn.className = 'absolute inset-2 rounded-full bg-zinc-950 text-white flex flex-col items-center justify-center active:scale-90 transition shadow-lg hover:bg-zinc-800';
+                if (btn) {
+                    btn.className = 'col-span-2 text-xs bg-[#F4F4F6] hover:bg-zinc-200 text-zinc-950 border border-zinc-300 font-extrabold px-3 py-3.5 rounded-2xl flex items-center justify-center gap-1.5 active:scale-95 transition uppercase tracking-wider';
+                    if (label) label.innerText = '🎤 Говорить';
+                }
+                if (dot) dot.className = 'w-7 h-7 rounded-full bg-zinc-950 text-white flex items-center justify-center shrink-0';
+                if (statusText) statusText.innerText = 'Нажмите кнопку микрофона сверху или «Говорить»';
+                if (card) card.classList.remove('ring-2', 'ring-red-500');
+                if (heroBtn) heroBtn.className = 'absolute inset-2 rounded-full bg-gradient-to-tr from-zinc-950 via-zinc-900 to-zinc-800 text-white flex flex-col items-center justify-center active:scale-90 transition shadow-xl hover:shadow-2xl border-2 border-zinc-700';
                 if (heroLabel) heroLabel.innerText = 'Голос';
             }
         }
@@ -668,7 +639,7 @@
             const input = document.getElementById('voiceInput');
             const raw = input.value.trim();
             if (!raw) {
-                activateKeyboardVoiceFallback('Сначала введите или надиктуйте текст!');
+                showToast('Сначала введите или надиктуйте текст!');
                 return;
             }
 
@@ -701,7 +672,6 @@
             proj.items.unshift({ id: Date.now(), type: isMaterial ? 'material' : 'work', name: cleanName, qty, unit, price });
 
             input.value = '';
-            document.getElementById('webviewVoiceHint').classList.add('hidden');
             saveState();
             trackGoal('item_parsed_voice');
             showToast(`Добавлено: ${cleanName}`);
@@ -859,7 +829,7 @@
         }
 
         function openMasterProfileModal() {
-            document.getElementById('sheetTitle').innerText = 'Визитка и PDF';
+            document.getElementById('sheetTitle').innerText = 'Визитка мастера и PDF';
             document.getElementById('sheetBody').innerHTML = `
                 <p class="text-xs text-zinc-500 font-semibold">Эти данные попадут в шапку сметы и официального PDF-договора.</p>
                 <div>
@@ -993,26 +963,6 @@
             showToast('📋 Смета скопирована в буфер!');
         }
 
-        async function shareToMAX() {
-            trackGoal('share_to_max');
-            const text = generateEstimateText();
-            copyToClipboardSilent(text);
-
-            if (navigator.share) {
-                try {
-                    await navigator.share({
-                        title: `Смета: ${getCurrentProject().name}`,
-                        text: text
-                    });
-                    closeSheet();
-                    return;
-                } catch (err) {}
-            }
-
-            closeSheet();
-            showToast('📋 Смета скопирована! Вставьте её в чат MAX');
-        }
-
         function openShareSheet() {
             const text = generateEstimateText();
             const encoded = encodeURIComponent(text);
@@ -1038,6 +988,22 @@
                 </div>
             `;
             showSheet();
+        }
+
+        async function shareToMAX() {
+            trackGoal('share_to_max');
+            const text = generateEstimateText();
+            copyToClipboardSilent(text);
+
+            if (navigator.share) {
+                try {
+                    await navigator.share({ title: `Смета: ${getCurrentProject().name}`, text: text });
+                    closeSheet();
+                    return;
+                } catch (err) {}
+            }
+            closeSheet();
+            showToast('📋 Смета скопирована! Вставьте её в чат MAX');
         }
 
         let selectedFeedbackRate = '👍 Удобно';
@@ -1098,6 +1064,9 @@
                 contact: contact || 'Не указан'
             };
 
+            // Подготовка к отправке в облачную базу/личное сообщение (архитектурный крюк)
+            // Когда подключим бэкенд, сюда добавится fetch('https://your-api.com/feedback', { method: 'POST', body: JSON.stringify(feedbackEntry) })
+
             try {
                 const existing = JSON.parse(localStorage.getItem(FEEDBACK_STORAGE_KEY) || '[]');
                 existing.push(feedbackEntry);
@@ -1109,17 +1078,7 @@
             trackGoal('feedback_submitted');
 
             closeSheet();
-            if (navigator.share) {
-                try {
-                    await navigator.share({
-                        title: 'Отзыв по приложению ГолосМастера',
-                        text: formattedFeedback
-                    });
-                    showToast('Спасибо за ваш отзыв!');
-                    return;
-                } catch (e) {}
-            }
-            showToast('Спасибо! Отзыв сохранен и скопирован');
+            showToast('🚀 Спасибо! Отзыв успешно сохранен');
         }
 
         function openAdvanceModal() {
