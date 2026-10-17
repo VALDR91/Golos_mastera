@@ -3,36 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ГолосМастера v0.75 — Сметчик Cal AI Edition</title>
+    <title>ГолосМастера v0.76 — Сметчик Cal AI Edition</title>
     
-    <!-- НАСТРОЙКИ ФОНОВОЙ ОТПРАВКИ ОТЗЫВОВ И МЕТРИКИ (ИНТЕГРИРОВАНО) -->
+    <!-- НАСТРОЙКИ ФОНОВОЙ ОТПРАВКИ ОТЗЫВОВ И МЕТРИКИ -->
     <script type="text/javascript">
-        // 1. Токен вашего бота в Telegram (от @BotFather) для тихой доставки отзывов вам в личку:
         const FEEDBACK_BOT_TOKEN = "AAHziIDoUJcdTpIlMUUqTQXpCCVsAa0ZXEs"; 
-        
-        // 2. Ваш личный цифровой ID (Chat ID, узнали через @userinfobot):
         const FEEDBACK_ADMIN_CHAT_ID = "Musical_Joker"; 
-
-        // 3. Опционально: Webhook URL (для MAX или внешней CRM/таблицы, если захотите дублировать):
         const FEEDBACK_WEBHOOK_URL = "";
-
-        // 4. Номер счетчика Яндекс.Метрики (оставьте 00000000, пока не подключили):
         const METRIKA_ID = 00000000;
-
-        (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
-        m[i].l=1*new Date();
-        for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
-        k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})
-        (window, document, "script", "https://mc.yandex.ru/metrika/tag.js", "ym");
-
-        if (METRIKA_ID !== 00000000) {
-            ym(METRIKA_ID, "init", {
-                 clickmap:true,
-                 trackLinks:true,
-                 accurateTrackBounce:true,
-                 webvisor:true
-            });
-        }
 
         function trackGoal(goalName, params = {}) {
             try {
@@ -43,7 +21,6 @@
         }
     </script>
 
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=Inter:wght@500;600;700;800&family=JetBrains+Mono:wght@600;700;800&display=swap" rel="stylesheet">
@@ -112,7 +89,7 @@
                 <div class="min-w-0">
                     <div class="flex items-center gap-1">
                         <span class="font-extrabold text-[15px] tracking-tight text-zinc-950 font-display truncate">ГолосМастера</span>
-                        <span class="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full bg-zinc-950 text-white shrink-0">v0.75</span>
+                        <span class="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full bg-zinc-950 text-white shrink-0">v0.76</span>
                     </div>
                     <button onclick="openMasterProfileModal()" class="text-[11px] text-zinc-600 font-bold flex items-center gap-1 mt-0.5 hover:text-zinc-950 max-w-full">
                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
@@ -334,4 +311,32 @@
     </div>
 
     <!-- ВСПЛЫВАЮЩИЙ ТОСТ -->
-    <div id="proToast" class="no-print fixed top-16 left-1/2 -translate-x-1/2 z-50 hidden bg-zinc-950 text-white px-5 py-3.5 rounded-full text-xs font-extrabold shadow-2xl flex items-center gap-2 whi
+    <div id="proToast" class="no-print fixed top-16 left-1/2 -translate-x-1/2 z-50 hidden bg-zinc-950 text-white px-5 py-3.5 rounded-full text-xs font-extrabold shadow-2xl flex items-center gap-2 whitespace-nowrap border border-zinc-700">
+        <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400 shrink-0"></i>
+        <span id="proToastText">Готово!</span>
+    </div>
+
+    <script>
+        const STORAGE_KEY = 'golos_mastera_cal_v076';
+
+        let state = {
+            currentProjectId: 'proj_1',
+            masterProfile: { name: 'Бригада «МастерПро»', phone: '+7 (999) 123-45-67' },
+            projects: [
+                {
+                    id: 'proj_1',
+                    name: 'ЖК Сити Парк, 84',
+                    advance: 20000,
+                    overhead5: false,
+                    discountPercent: 0,
+                    items: [
+                        { id: 1, type: 'work', name: 'Штукатурка стен по маякам', qty: 45, unit: 'м²', price: 800 },
+                        { id: 2, type: 'material', name: 'Штукатурка Knauf Ротбанд 30 кг', qty: 14, unit: 'мешк.', price: 500 }
+                    ]
+                }
+            ]
+        };
+
+        function autoResizeTextarea(el) {
+            el.style.height = 'auto';
+            el.style.height = Math.max(88, el.scrollHeight) + 'px
