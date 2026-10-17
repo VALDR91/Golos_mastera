@@ -1,13 +1,9 @@
 <!DOCTYPE html>
-<html lang="ru" style="color-scheme: light !important; background-color: #F4F4F6 !important;">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
-    <meta name="color-scheme" content="only light">
-    <title>ГолосМастера v0.79 — Сметчик Cal AI Edition</title>
+    <title>ГолосМастера v0.81 — Сметчик Cal AI Edition</title>
     
     <script type="text/javascript">
         const FEEDBACK_BOT_TOKEN = "AAHziIDoUJcdTpIlMUUqTQXpCCVsAa0ZXEs"; 
@@ -28,13 +24,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=Inter:wght@500;600;700;800&family=JetBrains+Mono:wght@600;700;800&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; }
-        html, body {
+        body {
             background-color: #F4F4F6 !important;
             color: #09090B !important;
             font-family: 'Inter', -apple-system, sans-serif;
             -webkit-tap-highlight-color: transparent;
             overflow-x: hidden;
-            color-scheme: light only !important;
         }
         .font-display { font-family: 'Plus Jakarta Sans', 'Inter', sans-serif; }
         .font-mono-num { font-family: 'JetBrains Mono', monospace; }
@@ -64,54 +59,49 @@
 
         @media print {
             .no-print { display: none !important; }
-            body { background: #FFFFFF !important; color: #000000 !important; padding: 0 !important; max-width: 100% !important; }
+            body { background: #FFFFFF !important; color: #000000 !important; }
             #pdfModalOverlay {
                 position: static !important;
                 display: block !important;
                 background: #FFFFFF !important;
                 padding: 0 !important;
-                overflow: visible !important;
             }
             #pdfModalToolbar { display: none !important; }
-            #pdfPaperCard {
-                box-shadow: none !important;
-                border: none !important;
-                padding: 0 !important;
-                margin: 0 !important;
-            }
         }
     </style>
 </head>
-<body style="background-color: #F4F4F6 !important; color: #09090B !important;" class="min-h-screen flex flex-col justify-between max-w-md mx-auto relative pb-36">
+<body class="min-h-screen flex flex-col justify-between max-w-md mx-auto relative pb-36" style="background-color: #F4F4F6 !important;">
 
     <!-- ШАПКА ПРИЛОЖЕНИЯ -->
-    <header class="no-print px-3.5 pt-3.5 pb-2 sticky top-0 z-30" style="background: rgba(244, 244, 246, 0.9); backdrop-filter: blur(12px);">
+    <header class="no-print px-3 pt-3 pb-2 sticky top-0 z-30" style="background: rgba(244, 244, 246, 0.95); backdrop-filter: blur(12px);">
         <div class="flex items-center justify-between gap-1.5">
-            <div class="flex items-center gap-2 min-w-0 shrink">
+            <!-- Левый блок: Иконка + Название + Визитка с защитой от сжатия -->
+            <div class="flex items-center gap-2 min-w-0 flex-1">
                 <div class="w-10 h-10 rounded-2xl bg-zinc-950 flex items-center justify-center shadow-sm shrink-0">
-                    <i data-lucide="clipboard-list" class="w-5 h-5 text-white stroke-[2.2]"></i>
+                    <i data-lucide="clipboard-list" class="w-4 h-4 text-white stroke-[2.2]"></i>
                 </div>
-                <div class="min-w-0">
-                    <div class="flex items-center gap-1">
-                        <span class="font-extrabold text-[15px] tracking-tight text-zinc-950 font-display truncate">ГолосМастера</span>
-                        <span class="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full bg-zinc-950 text-white shrink-0">v0.79</span>
+                <div class="min-w-0 flex-1">
+                    <div class="flex items-center gap-1.5">
+                        <span class="font-extrabold text-sm tracking-tight text-zinc-950 font-display truncate">ГолосМастера</span>
+                        <span class="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full bg-zinc-950 text-white shrink-0">v0.81</span>
                     </div>
-                    <button onclick="openMasterProfileModal()" class="text-[11px] text-zinc-600 font-bold flex items-center gap-1 mt-0.5 hover:text-zinc-950 max-w-full">
-                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
-                        <span id="masterHeaderLabel" class="underline decoration-zinc-300 truncate max-w-[115px]">Визитка PDF</span>
+                    <button onclick="openMasterProfileModal()" class="text-[11px] text-zinc-600 font-bold flex items-center gap-1 mt-0.5 hover:text-zinc-950 w-full text-left">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+                        <span id="masterHeaderLabel" class="underline decoration-zinc-300 truncate">Визитка PDF</span>
                     </button>
                 </div>
             </div>
 
+            <!-- Правый блок: Отзыв + Выбор объекта -->
             <div class="flex items-center gap-1.5 shrink-0">
-                <button onclick="openFeedbackModal()" class="bg-zinc-950 text-white px-2.5 py-2 rounded-xl flex items-center gap-1 active:scale-95 transition shadow-xs text-[11px] font-extrabold shrink-0" title="Оставить отзыв или предложение">
+                <button onclick="openFeedbackModal()" class="bg-zinc-950 text-white px-2.5 py-2 rounded-xl flex items-center gap-1 active:scale-95 transition shadow-xs text-xs font-extrabold shrink-0">
                     <i data-lucide="message-square-plus" class="w-3.5 h-3.5"></i>
                     <span>Отзыв</span>
                 </button>
-                <button onclick="openProjectSheet()" class="bg-white text-zinc-950 px-2.5 py-1.5 rounded-xl flex items-center gap-1.5 active:scale-95 transition shadow-xs border border-zinc-200 max-w-[122px]">
+                <button onclick="openProjectSheet()" class="bg-white text-zinc-950 px-2.5 py-2 rounded-xl flex items-center gap-1.5 active:scale-95 transition shadow-xs border border-zinc-200 max-w-[125px] shrink-0">
                     <div class="text-left min-w-0">
                         <div class="text-[8px] text-zinc-500 uppercase font-extrabold tracking-wider leading-none">Объект</div>
-                        <div id="currentProjName" class="text-[11px] font-extrabold text-zinc-950 truncate mt-0.5">ЖК Сити Парк</div>
+                        <div id="currentProjName" class="text-xs font-extrabold text-zinc-950 truncate mt-0.5">ЖК Сити Парк</div>
                     </div>
                     <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-zinc-950 shrink-0"></i>
                 </button>
@@ -288,7 +278,7 @@
         <div class="bg-white rounded-[24px] p-2 flex items-center gap-1.5 shadow-xl border border-zinc-200">
             <button onclick="openShareSheet()" class="flex-1 py-3.5 px-3 rounded-2xl cal-btn-black active:scale-95 transition flex items-center justify-center gap-2 text-xs font-extrabold uppercase tracking-wider">
                 <i data-lucide="send" class="w-4 h-4"></i>
-                <span>Отправить в 1 клик</span>
+                <span>Отправить клиенту</span>
             </button>
             <button onclick="openOfficialEstimateModal()" class="p-3.5 rounded-2xl bg-[#F4F4F6] hover:bg-zinc-200 text-zinc-950 active:scale-95 transition" title="Открыть бланк PDF">
                 <i data-lucide="file-text" class="w-5 h-5"></i>
@@ -322,7 +312,7 @@
     </div>
 
     <script>
-        const STORAGE_KEY = 'golos_mastera_cal_v079';
+        const STORAGE_KEY = 'golos_mastera_cal_v081';
 
         let state = {
             currentProjectId: 'proj_1',
@@ -333,4 +323,789 @@
                     name: 'ЖК Сити Парк, 84',
                     advance: 20000,
                     overhead5: false,
-   
+                    discountPercent: 0,
+                    items: [
+                        { id: 1, type: 'work', name: 'Штукатурка стен по маякам', qty: 45, unit: 'м²', price: 800 },
+                        { id: 2, type: 'material', name: 'Штукатурка Knauf Ротбанд 30 кг', qty: 14, unit: 'мешк.', price: 500 }
+                    ]
+                }
+            ]
+        };
+
+        function autoResizeTextarea(el) {
+            el.style.height = 'auto';
+            el.style.height = Math.max(88, el.scrollHeight) + 'px';
+        }
+
+        function loadState() {
+            try {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    if (parsed && Array.isArray(parsed.projects) && parsed.projects.length > 0) {
+                        state = { ...state, ...parsed };
+                    }
+                }
+            } catch (e) {}
+            renderUI();
+        }
+
+        function saveState() {
+            try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+            renderUI();
+        }
+
+        function getCurrentProject() {
+            let p = state.projects.find(p => p.id === state.currentProjectId);
+            if (!p) {
+                p = state.projects[0];
+                if (p) state.currentProjectId = p.id;
+            }
+            if (!p) {
+                p = { id: 'proj_1', name: 'Мой объект', advance: 0, overhead5: false, discountPercent: 0, items: [] };
+                state.projects = [p];
+                state.currentProjectId = p.id;
+            }
+            if (typeof p.overhead5 === 'undefined') p.overhead5 = false;
+            if (typeof p.discountPercent === 'undefined') p.discountPercent = 0;
+            return p;
+        }
+
+        function calculateTotals(proj) {
+            let wSum = 0, mSum = 0;
+            proj.items.forEach(item => {
+                const row = Math.round(item.qty * item.price);
+                if (item.type === 'work') wSum += row; else mSum += row;
+            });
+            const baseTotal = wSum + mSum;
+            const overheadSum = proj.overhead5 ? Math.round(baseTotal * 0.05) : 0;
+            const discountSum = proj.discountPercent > 0 ? Math.round((baseTotal + overheadSum) * (proj.discountPercent / 100)) : 0;
+            const finalTotal = baseTotal + overheadSum - discountSum;
+            const balance = finalTotal - (proj.advance || 0);
+            return { wSum, mSum, baseTotal, overheadSum, discountSum, finalTotal, balance };
+        }
+
+        function renderUI() {
+            const proj = getCurrentProject();
+            document.getElementById('currentProjName').innerText = proj.name;
+            document.getElementById('masterHeaderLabel').innerText = state.masterProfile?.name || 'Визитка PDF';
+
+            const worksEl = document.getElementById('proWorksList');
+            const matsEl = document.getElementById('proMatsList');
+            worksEl.innerHTML = '';
+            matsEl.innerHTML = '';
+
+            proj.items.forEach(item => {
+                const total = Math.round(item.qty * item.price);
+                const isWork = item.type === 'work';
+
+                const card = `
+                    <div onclick="openItemModal('${item.type}', ${item.id})" class="cal-card p-4 flex items-center justify-between active:scale-[0.99] transition cursor-pointer hover:border-zinc-300">
+                        <div class="flex items-center gap-3 pr-2 min-w-0">
+                            <div class="w-11 h-11 rounded-2xl ${isWork ? 'bg-zinc-950 text-white' : 'bg-[#F4F4F6] text-zinc-950 border border-zinc-200'} flex items-center justify-center shrink-0">
+                                <i data-lucide="${isWork ? 'hammer' : 'package'}" class="w-5 h-5"></i>
+                            </div>
+                            <div class="min-w-0">
+                                <div class="font-extrabold text-sm text-zinc-950 leading-snug truncate">${item.name}</div>
+                                <div class="text-xs font-mono-num font-bold text-zinc-500 mt-0.5">
+                                    ${item.qty} ${item.unit} × ${item.price.toLocaleString('ru-RU')} ₽
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-2.5 shrink-0">
+                            <div class="flex items-center bg-[#F4F4F6] rounded-xl p-1 border border-zinc-200" onclick="event.stopPropagation()">
+                                <button onclick="quickChangeQty(${item.id}, -1)" class="w-7 h-7 rounded-lg bg-white text-zinc-950 font-extrabold text-sm flex items-center justify-center shadow-2xs active:scale-90 transition">−</button>
+                                <span class="px-2 font-mono-num font-extrabold text-xs text-zinc-950">${item.qty}</span>
+                                <button onclick="quickChangeQty(${item.id}, 1)" class="w-7 h-7 rounded-lg bg-zinc-950 text-white font-extrabold text-sm flex items-center justify-center shadow-2xs active:scale-90 transition">+</button>
+                            </div>
+
+                            <div class="text-right min-w-[78px]">
+                                <div class="font-extrabold font-mono-num text-sm text-zinc-950">${total.toLocaleString('ru-RU')} ₽</div>
+                                <div class="text-[10px] font-bold text-zinc-400">Править ›</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                if (isWork) worksEl.innerHTML += card; else matsEl.innerHTML += card;
+            });
+
+            if (!worksEl.innerHTML) worksEl.innerHTML = '<div class="cal-card p-4 text-zinc-400 text-xs font-bold text-center">Список работ пуст</div>';
+            if (!matsEl.innerHTML) matsEl.innerHTML = '<div class="cal-card p-4 text-zinc-400 text-xs font-bold text-center">Список материалов пуст</div>';
+
+            const calc = calculateTotals(proj);
+
+            document.getElementById('dashWorks').innerText = calc.wSum.toLocaleString('ru-RU') + ' ₽';
+            document.getElementById('dashMats').innerText = calc.mSum.toLocaleString('ru-RU') + ' ₽';
+            document.getElementById('dashAdv').innerText = (proj.advance > 0 ? '-' : '') + proj.advance.toLocaleString('ru-RU') + ' ₽';
+            document.getElementById('heroBalance').innerText = calc.balance.toLocaleString('ru-RU') + ' ₽';
+            document.getElementById('totalBudgetText').innerText = `Всего по смете: ${calc.finalTotal.toLocaleString('ru-RU')} ₽`;
+
+            const ovBtn = document.getElementById('overheadBtn');
+            const ovSt = document.getElementById('overheadStatus');
+            if (proj.overhead5) {
+                ovBtn.className = 'py-2.5 px-3 rounded-xl border border-zinc-950 bg-zinc-950 text-white text-xs font-extrabold flex items-center justify-between transition active:scale-95';
+                ovSt.innerText = `+${calc.overheadSum.toLocaleString('ru-RU')} ₽`;
+            } else {
+                ovBtn.className = 'py-2.5 px-3 rounded-xl border border-zinc-200 bg-[#F4F4F6] text-zinc-700 text-xs font-extrabold flex items-center justify-between transition active:scale-95';
+                ovSt.innerText = 'ВЫКЛ';
+            }
+
+            const discBtn = document.getElementById('discountBtn');
+            const discSt = document.getElementById('discountStatus');
+            if (proj.discountPercent > 0) {
+                discBtn.className = 'py-2.5 px-3 rounded-xl border border-emerald-600 bg-emerald-50 text-emerald-900 text-xs font-extrabold flex items-center justify-between transition active:scale-95';
+                discSt.innerText = `-${proj.discountPercent}%`;
+            } else {
+                discBtn.className = 'py-2.5 px-3 rounded-xl border border-zinc-200 bg-[#F4F4F6] text-zinc-700 text-xs font-extrabold flex items-center justify-between transition active:scale-95';
+                discSt.innerText = '0%';
+            }
+
+            try { lucide.createIcons(); } catch (e) {}
+        }
+
+        function quickChangeQty(id, delta) {
+            const proj = getCurrentProject();
+            const item = proj.items.find(i => i.id === id);
+            if (!item) return;
+            const nextVal = Math.round((item.qty + delta) * 100) / 100;
+            if (nextVal <= 0) { openItemModal(item.type, item.id); return; }
+            item.qty = nextVal;
+            saveState();
+        }
+
+        function toggleOverhead() {
+            const proj = getCurrentProject();
+            proj.overhead5 = !proj.overhead5;
+            saveState();
+            showToast(proj.overhead5 ? 'Добавлены расходники (+5%)' : 'Надбавка отключена');
+        }
+
+        function openDiscountModal() {
+            const proj = getCurrentProject();
+            const presets = [0, 3, 5, 10, 15];
+            const buttonsHtml = presets.map(p => `
+                <button onclick="setDiscount(${p})" class="py-3 rounded-2xl font-mono-num font-extrabold text-sm border transition ${proj.discountPercent === p ? 'bg-zinc-950 text-white border-zinc-950' : 'bg-[#F4F4F6] text-zinc-900 border-zinc-200'}">
+                    ${p === 0 ? 'Без скидки' : `-${p}%`}
+                </button>
+            `).join('');
+
+            document.getElementById('sheetTitle').innerText = 'Скидка для клиента';
+            document.getElementById('sheetBody').innerHTML = `
+                <p class="text-xs text-zinc-500 font-semibold">Выберите размер скидки от общей суммы сметы:</p>
+                <div class="grid grid-cols-3 gap-2">${buttonsHtml}</div>
+            `;
+            showSheet();
+        }
+
+        function setDiscount(percent) {
+            const proj = getCurrentProject();
+            proj.discountPercent = percent;
+            closeSheet();
+            saveState();
+            showToast(percent > 0 ? `Скидка -${percent}% применена` : 'Скидка убрана');
+        }
+
+        function openFeedbackModal() {
+            trackGoal('open_feedback');
+            document.getElementById('sheetTitle').innerText = 'Отзыв или предложение';
+            document.getElementById('sheetBody').innerHTML = `
+                <div class="space-y-3">
+                    <p class="text-xs text-zinc-600 font-medium leading-relaxed">Напишите, чего не хватает в приложении или что сделать удобнее. Сообщение сразу прилетит разработчику:</p>
+                    <div>
+                        <label class="text-xs font-extrabold text-zinc-500 uppercase">Ваше сообщение:</label>
+                        <textarea id="feedbackText" rows="3" placeholder="Например: добавьте расчёт обоев..." class="w-full mt-1.5 p-3.5 rounded-2xl bg-[#F4F4F6] border border-zinc-200 text-zinc-950 text-sm font-semibold focus:outline-none focus:border-zinc-950"></textarea>
+                    </div>
+                    <div>
+                        <label class="text-xs font-extrabold text-zinc-500 uppercase">Ваш контакт (необязательно):</label>
+                        <input id="feedbackContact" placeholder="Телефон или ник для связи" class="w-full mt-1.5 p-3.5 rounded-2xl bg-[#F4F4F6] border border-zinc-200 text-zinc-950 text-sm font-semibold focus:outline-none focus:border-zinc-950">
+                    </div>
+                    <button id="submitFeedbackBtn" onclick="submitSilentFeedback()" class="w-full p-4 rounded-2xl cal-btn-black font-extrabold text-xs uppercase tracking-wider active:scale-95 transition flex items-center justify-center gap-2">
+                        <span>Отправить</span>
+                    </button>
+                </div>
+            `;
+            showSheet();
+            try { lucide.createIcons(); } catch (e) {}
+        }
+
+        async function submitSilentFeedback() {
+            const txtEl = document.getElementById('feedbackText');
+            const contactEl = document.getElementById('feedbackContact');
+            const btn = document.getElementById('submitFeedbackBtn');
+
+            const rawText = txtEl ? txtEl.value.trim() : '';
+            const rawContact = contactEl ? contactEl.value.trim() : '';
+
+            if (!rawText) {
+                showToast('Напишите хотя бы пару слов!');
+                return;
+            }
+
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<span>Отправка...</span>';
+            }
+
+            const proj = getCurrentProject();
+            const masterName = state.masterProfile?.name || 'Мастер';
+            const messagePayload = `🔔 Новый отзыв ГолосМастера (v0.81)\n👤 От: ${masterName}${rawContact ? ' (' + rawContact + ')' : ''}\n🏠 Объект: ${proj.name}\n\n💬 Текст:\n${rawText}`;
+
+            trackGoal('feedback_sent', { feedback_text: rawText, contact: rawContact });
+
+            try {
+                if (FEEDBACK_BOT_TOKEN && FEEDBACK_ADMIN_CHAT_ID) {
+                    await fetch(`https://api.telegram.org/bot${FEEDBACK_BOT_TOKEN}/sendMessage`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            chat_id: FEEDBACK_ADMIN_CHAT_ID,
+                            text: messagePayload
+                        })
+                    });
+                }
+            } catch (err) {}
+
+            closeSheet();
+            showToast('Спасибо! Ваш отзыв отправлен');
+        }
+
+        let recognition = null;
+        let isRecording = false;
+
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            try {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                recognition = new SpeechRecognition();
+                recognition.lang = 'ru-RU';
+                recognition.interimResults = false;
+                recognition.maxAlternatives = 1;
+
+                recognition.onstart = () => { isRecording = true; updateMicUI(true); };
+                recognition.onresult = (event) => {
+                    const transcript = event.results[0][0].transcript;
+                    const input = document.getElementById('voiceInput');
+                    input.value = input.value ? input.value + ' ' + transcript : transcript;
+                    autoResizeTextarea(input);
+                    showToast('Распознано!');
+                    parseLocalText();
+                };
+                recognition.onerror = () => {
+                    isRecording = false;
+                    updateMicUI(false);
+                    fallbackToKeyboardMic();
+                };
+                recognition.onend = () => { isRecording = false; updateMicUI(false); };
+            } catch (e) {
+                recognition = null;
+            }
+        }
+
+        function fallbackToKeyboardMic() {
+            const input = document.getElementById('voiceInput');
+            const card = document.getElementById('voiceInputCard');
+            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            card.classList.add('ring-2', 'ring-zinc-950');
+            setTimeout(() => card.classList.remove('ring-2', 'ring-zinc-950'), 2500);
+            input.focus();
+            showToast('Нажмите на микрофон на клавиатуре телефона');
+        }
+
+        function handleVoiceClick() {
+            trackGoal('voice_btn_click');
+            if (!recognition) {
+                fallbackToKeyboardMic();
+                return;
+            }
+            if (isRecording) {
+                recognition.stop();
+            } else {
+                try {
+                    recognition.start();
+                } catch (e) {
+                    fallbackToKeyboardMic();
+                }
+            }
+        }
+
+        function updateMicUI(active) {
+            const btn = document.getElementById('mainMicHeroBtn');
+            const icon = document.getElementById('mainMicIcon');
+            const label = document.getElementById('mainMicLabel');
+            const ring = document.getElementById('micPulseRing');
+
+            if (active) {
+                btn.className = 'w-20 h-20 rounded-3xl bg-red-600 text-white flex flex-col items-center justify-center animate-pulse shadow-lg shrink-0 relative group';
+                icon.className = 'w-8 h-8 text-white stroke-[2.5]';
+                label.innerText = 'Слушаю';
+                ring.className = 'absolute inset-0 rounded-3xl bg-red-500 opacity-75 animate-ping pointer-events-none';
+            } else {
+                btn.className = 'w-20 h-20 rounded-3xl bg-zinc-950 text-white flex flex-col items-center justify-center active:scale-90 transition shadow-lg shrink-0 relative group';
+                icon.className = 'w-8 h-8 text-white stroke-[2.2]';
+                label.innerText = 'Голос';
+                ring.className = 'absolute inset-0 rounded-3xl bg-zinc-950 opacity-0 transition pointer-events-none';
+            }
+        }
+
+        const demoPhrases = [
+            "Шпаклевка стен 25 квадратов по 550 рублей",
+            "Грунтовка глубокого проникновения 4 канистры по 1200",
+            "Разводка электрики 18 точек по 1100 рублей",
+            "Плиточный клей Кнауф 10 мешков по 650"
+        ];
+        let demoIndex = 0;
+
+        function loadDemoPhrase() {
+            const input = document.getElementById('voiceInput');
+            input.value = demoPhrases[demoIndex % demoPhrases.length];
+            autoResizeTextarea(input);
+            demoIndex++;
+        }
+
+        function parseLocalText() {
+            const input = document.getElementById('voiceInput');
+            const raw = input.value.trim();
+            if (!raw) {
+                fallbackToKeyboardMic();
+                return;
+            }
+
+            const numbers = raw.match(/\d+(?:[.,]\d+)?/g);
+            let qty = 1, price = 0;
+            if (numbers && numbers.length >= 2) {
+                qty = parseFloat(numbers[numbers.length - 2].replace(',', '.'));
+                price = parseFloat(numbers[numbers.length - 1].replace(',', '.'));
+            } else if (numbers && numbers.length === 1) {
+                price = parseFloat(numbers[0].replace(',', '.'));
+            }
+
+            const lower = raw.toLowerCase();
+            let unit = 'м²';
+            if (lower.includes('точ')) unit = 'точка';
+            else if (lower.includes('меш')) unit = 'мешк.';
+            else if (lower.includes('бухт')) unit = 'бухта';
+            else if (lower.includes('канист') || lower.includes('л')) unit = 'канистра';
+            else if (lower.includes('шт')) unit = 'шт.';
+
+            const matKeywords = ['меш', 'ротбанд', 'кабель', 'клей', 'грунтовк', 'канист', 'бухт', 'смесь'];
+            const isMaterial = matKeywords.some(k => lower.includes(k));
+
+            let cleanName = raw.replace(/\bпо\s+\d+.*/i, '').replace(/\d+\s*(квадратов|квадрата|м2|м²|точек|точки|мешков|мешка|шт|штук|канистры|канистр|бухты|рублей|руб|р).*/i, '').trim();
+            if (!cleanName || cleanName.length < 2) cleanName = raw;
+            else cleanName = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
+
+            const proj = getCurrentProject();
+            proj.items.unshift({ id: Date.now(), type: isMaterial ? 'material' : 'work', name: cleanName, qty, unit, price });
+
+            input.value = '';
+            input.style.height = '88px';
+            trackGoal('item_parsed_from_text');
+            saveState();
+            showToast(`Добавлено: ${cleanName}`);
+        }
+
+        let modalSelectedType = 'work';
+        let modalSelectedUnit = 'м²';
+        const UNITS_LIST = ['м²', 'м.п.', 'точка', 'шт.', 'мешк.', 'бухта', 'канистра'];
+
+        function selectModalType(type) {
+            modalSelectedType = type;
+            const btnWork = document.getElementById('typeBtn_work');
+            const btnMat = document.getElementById('typeBtn_material');
+            if (btnWork && btnMat) {
+                btnWork.className = type === 'work' ? 'flex-1 py-3 px-3 rounded-xl bg-zinc-950 text-white font-extrabold text-xs transition shadow-sm flex items-center justify-center gap-1.5' : 'flex-1 py-3 px-3 rounded-xl bg-transparent text-zinc-600 font-bold text-xs transition flex items-center justify-center gap-1.5';
+                btnMat.className = type === 'material' ? 'flex-1 py-3 px-3 rounded-xl bg-zinc-950 text-white font-extrabold text-xs transition shadow-sm flex items-center justify-center gap-1.5' : 'flex-1 py-3 px-3 rounded-xl bg-transparent text-zinc-600 font-bold text-xs transition flex items-center justify-center gap-1.5';
+            }
+        }
+
+        function selectModalUnit(unit) {
+            modalSelectedUnit = unit;
+            UNITS_LIST.forEach(u => {
+                const el = document.getElementById('unitChip_' + u);
+                if (el) {
+                    el.className = u === unit ? 'px-3.5 py-2 rounded-xl bg-zinc-950 text-white font-extrabold text-xs transition shadow-xs shrink-0' : 'px-3.5 py-2 rounded-xl bg-[#F4F4F6] text-zinc-700 border border-zinc-200 font-bold text-xs transition shrink-0';
+                }
+            });
+        }
+
+        function openItemModal(defaultType, itemId = null) {
+            const proj = getCurrentProject();
+            const item = itemId ? proj.items.find(i => i.id === itemId) : null;
+            modalSelectedType = item ? item.type : defaultType;
+            modalSelectedUnit = item ? item.unit : (modalSelectedType === 'material' ? 'мешк.' : 'м²');
+
+            const unitChipsHtml = UNITS_LIST.map(u => `
+                <button type="button" id="unitChip_${u}" onclick="selectModalUnit('${u}')" class="${u === modalSelectedUnit ? 'px-3.5 py-2 rounded-xl bg-zinc-950 text-white font-extrabold text-xs transition shadow-xs shrink-0' : 'px-3.5 py-2 rounded-xl bg-[#F4F4F6] text-zinc-700 border border-zinc-200 font-bold text-xs transition shrink-0'}">
+                    ${u}
+                </button>
+            `).join('');
+
+            document.getElementById('sheetTitle').innerText = item ? 'Редактировать позицию' : 'Новая позиция';
+            document.getElementById('sheetBody').innerHTML = `
+                <div>
+                    <label class="text-xs font-extrabold text-zinc-500 uppercase">Раздел сметы</label>
+                    <div class="mt-1.5 p-1 rounded-2xl bg-[#F4F4F6] border border-zinc-200 flex gap-1">
+                        <button type="button" id="typeBtn_work" onclick="selectModalType('work')" class="${modalSelectedType === 'work' ? 'flex-1 py-3 px-3 rounded-xl bg-zinc-950 text-white font-extrabold text-xs transition shadow-sm flex items-center justify-center gap-1.5' : 'flex-1 py-3 px-3 rounded-xl bg-transparent text-zinc-600 font-bold text-xs transition flex items-center justify-center gap-1.5'}">
+                            <span>1. Работы</span>
+                        </button>
+                        <button type="button" id="typeBtn_material" onclick="selectModalType('material')" class="${modalSelectedType === 'material' ? 'flex-1 py-3 px-3 rounded-xl bg-zinc-950 text-white font-extrabold text-xs transition shadow-sm flex items-center justify-center gap-1.5' : 'flex-1 py-3 px-3 rounded-xl bg-transparent text-zinc-600 font-bold text-xs transition flex items-center justify-center gap-1.5'}">
+                            <span>2. Материалы</span>
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    <label class="text-xs font-extrabold text-zinc-500 uppercase">Наименование</label>
+                    <input id="shName" value="${item ? item.name : ''}" placeholder="Например: Укладка плитки" class="w-full mt-1.5 p-3.5 rounded-2xl bg-[#F4F4F6] border border-zinc-200 text-zinc-950 text-base font-bold">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-xs font-extrabold text-zinc-500 uppercase">Кол-во</label>
+                        <input id="shQty" type="number" step="any" value="${item ? item.qty : 10}" class="w-full mt-1.5 p-3.5 rounded-2xl bg-[#F4F4F6] border border-zinc-200 text-zinc-950 font-mono-num font-extrabold text-lg">
+                    </div>
+                    <div>
+                        <label class="text-xs font-extrabold text-zinc-500 uppercase">Цена (₽)</label>
+                        <input id="shPrice" type="number" step="any" value="${item ? item.price : 500}" class="w-full mt-1.5 p-3.5 rounded-2xl bg-[#F4F4F6] border border-zinc-200 text-zinc-950 font-mono-num font-extrabold text-lg">
+                    </div>
+                </div>
+                <div>
+                    <label class="text-xs font-extrabold text-zinc-500 uppercase">Единица измерения</label>
+                    <div class="flex flex-wrap gap-1.5 mt-1.5">${unitChipsHtml}</div>
+                </div>
+                <div class="pt-2 flex gap-2.5">
+                    <button onclick="saveItemForm(${itemId})" class="flex-1 p-4 rounded-2xl cal-btn-black font-extrabold text-xs uppercase tracking-wider">Сохранить</button>
+                    ${item ? `<button onclick="deleteItem(${item.id})" class="p-4 rounded-2xl bg-red-50 text-red-600 font-extrabold text-xs">Удалить</button>` : ''}
+                </div>
+            `;
+            showSheet();
+        }
+
+        function saveItemForm(id) {
+            const proj = getCurrentProject();
+            const name = document.getElementById('shName').value.trim();
+            const qty = parseFloat(document.getElementById('shQty').value) || 1;
+            const unit = modalSelectedUnit;
+            const price = parseFloat(document.getElementById('shPrice').value) || 0;
+            const type = modalSelectedType;
+
+            if (!name) { showToast('Укажите название!'); return; }
+
+            if (id) {
+                const item = proj.items.find(i => i.id === id);
+                if (item) { item.name = name; item.qty = qty; item.unit = unit; item.price = price; item.type = type; }
+            } else {
+                proj.items.unshift({ id: Date.now(), type, name, qty, unit, price });
+            }
+
+            closeSheet();
+            saveState();
+            showToast('Сохранено');
+        }
+
+        function deleteItem(id) {
+            const proj = getCurrentProject();
+            proj.items = proj.items.filter(i => i.id !== id);
+            closeSheet();
+            saveState();
+            showToast('Удалено');
+        }
+
+        function openMasterProfileModal() {
+            document.getElementById('sheetTitle').innerText = 'Визитка мастера для PDF';
+            document.getElementById('sheetBody').innerHTML = `
+                <p class="text-xs text-zinc-500 font-semibold">Эти данные попадут в шапку официального PDF-договора и текстовой сметы.</p>
+                <div>
+                    <label class="text-xs font-extrabold text-zinc-500 uppercase">Имя / Бригада</label>
+                    <input id="shMasterName" value="${state.masterProfile?.name || ''}" class="w-full mt-1.5 p-3.5 rounded-2xl bg-[#F4F4F6] border border-zinc-200 text-zinc-950 font-bold text-base">
+                </div>
+                <div>
+                    <label class="text-xs font-extrabold text-zinc-500 uppercase">Телефон</label>
+                    <input id="shMasterPhone" value="${state.masterProfile?.phone || ''}" class="w-full mt-1.5 p-3.5 rounded-2xl bg-[#F4F4F6] border border-zinc-200 text-zinc-950 font-mono-num font-bold text-base">
+                </div>
+                <button onclick="saveMasterProfile()" class="w-full p-4 rounded-2xl cal-btn-black font-extrabold text-xs uppercase tracking-wider">Сохранить</button>
+            `;
+            showSheet();
+        }
+
+        function saveMasterProfile() {
+            state.masterProfile = {
+                name: document.getElementById('shMasterName').value.trim() || 'Частный мастер',
+                phone: document.getElementById('shMasterPhone').value.trim() || ''
+            };
+            closeSheet();
+            saveState();
+            showToast('Визитка обновлена');
+        }
+
+        function openOfficialEstimateModal() {
+            trackGoal('export_pdf');
+            const proj = getCurrentProject();
+            const calc = calculateTotals(proj);
+            const works = proj.items.filter(i => i.type === 'work');
+            const mats = proj.items.filter(i => i.type === 'material');
+
+            document.getElementById('pdfProjTitle').innerText = `Объект: ${proj.name}`;
+            document.getElementById('pdfDate').innerText = `Дата составления: ${new Date().toLocaleDateString('ru-RU')}`;
+            document.getElementById('pdfMasterName').innerText = `Исполнитель: ${state.masterProfile?.name || 'Частный мастер'}`;
+            document.getElementById('pdfMasterPhone').innerText = state.masterProfile?.phone ? `Тел.: ${state.masterProfile.phone}` : '';
+
+            const buildTable = (title, arr, subtotal) => {
+                if (!arr.length) return '';
+                const rows = arr.map((item, idx) => `
+                    <tr>
+                        <td style="border: 1px solid #D4D4D8; padding: 7px; text-align: center;">${idx + 1}</td>
+                        <td style="border: 1px solid #D4D4D8; padding: 7px; font-weight: 600;">${item.name}</td>
+                        <td style="border: 1px solid #D4D4D8; padding: 7px; text-align: center; white-space: nowrap;">${item.qty} ${item.unit}</td>
+                        <td style="border: 1px solid #D4D4D8; padding: 7px; text-align: right; white-space: nowrap;">${item.price.toLocaleString('ru-RU')} ₽</td>
+                        <td style="border: 1px solid #D4D4D8; padding: 7px; text-align: right; font-weight: 700; white-space: nowrap;">${Math.round(item.qty * item.price).toLocaleString('ru-RU')} ₽</td>
+                    </tr>
+                `).join('');
+
+                return `
+                    <div>
+                        <h3 style="font-size: 13px; font-weight: 800; margin: 0 0 8px 0; text-transform: uppercase;">${title}</h3>
+                        <div style="overflow-x: auto;">
+                            <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+                                <thead>
+                                    <tr style="background: #F4F4F5;">
+                                        <th style="border: 1px solid #D4D4D8; padding: 7px; width: 32px;">№</th>
+                                        <th style="border: 1px solid #D4D4D8; padding: 7px; text-align: left;">Наименование</th>
+                                        <th style="border: 1px solid #D4D4D8; padding: 7px;">Кол-во</th>
+                                        <th style="border: 1px solid #D4D4D8; padding: 7px; text-align: right;">Цена</th>
+                                        <th style="border: 1px solid #D4D4D8; padding: 7px; text-align: right;">Сумма</th>
+                                    </tr>
+                                </thead>
+                                <tbody>${rows}</tbody>
+                            </table>
+                        </div>
+                        <div style="text-align: right; font-size: 12px; font-weight: 800; margin-top: 6px;">Итого по разделу: ${subtotal.toLocaleString('ru-RU')} ₽</div>
+                    </div>
+                `;
+            };
+
+            document.getElementById('pdfTablesContainer').innerHTML = buildTable('1. Работы', works, calc.wSum) + buildTable('2. Черновые материалы', mats, calc.mSum);
+
+            let summaryHtml = `<div style="width: 100%; max-width: 280px; font-size: 13px; line-height: 1.7;">`;
+            if (proj.overhead5) summaryHtml += `<div style="display:flex; justify-content:space-between;"><span>Расходники (+5%):</span><b>+${calc.overheadSum.toLocaleString('ru-RU')} ₽</b></div>`;
+            if (proj.discountPercent > 0) summaryHtml += `<div style="display:flex; justify-content:space-between;"><span>Скидка (-${proj.discountPercent}%):</span><b>-${calc.discountSum.toLocaleString('ru-RU')} ₽</b></div>`;
+            summaryHtml += `<div style="display:flex; justify-content:space-between; font-size: 15px; font-weight: 800; border-top: 1px solid #E4E4E7; padding-top: 4px; margin-top: 4px;"><span>ВСЕГО ПО СМЕТЕ:</span><span>${calc.finalTotal.toLocaleString('ru-RU')} ₽</span></div>`;
+            if (proj.advance > 0) summaryHtml += `<div style="display:flex; justify-content:space-between;"><span>Аванс:</span><b>-${proj.advance.toLocaleString('ru-RU')} ₽</b></div>`;
+            summaryHtml += `<div style="display:flex; justify-content:space-between; font-size: 15px; font-weight: 800; margin-top: 4px;"><span>К ОПЛАТЕ:</span><span>${calc.balance.toLocaleString('ru-RU')} ₽</span></div></div>`;
+
+            document.getElementById('pdfSummaryBlock').innerHTML = summaryHtml;
+
+            document.getElementById('pdfModalOverlay').classList.remove('hidden');
+            try { lucide.createIcons(); } catch (e) {}
+        }
+
+        function closePdfModal() {
+            document.getElementById('pdfModalOverlay').classList.add('hidden');
+        }
+
+        function triggerSystemPrint() {
+            try {
+                window.print();
+            } catch (e) {
+                showToast('Сделайте скриншот бланка или скопируйте текст');
+            }
+        }
+
+        function generateEstimateText() {
+            const proj = getCurrentProject();
+            const calc = calculateTotals(proj);
+            const works = proj.items.filter(i => i.type === 'work');
+            const mats = proj.items.filter(i => i.type === 'material');
+
+            let text = `СМЕТА: ${proj.name}\n`;
+            if (state.masterProfile?.name) text += `Исполнитель: ${state.masterProfile.name} ${state.masterProfile.phone ? '(' + state.masterProfile.phone + ')' : ''}\n`;
+            text += `────────────────────\n`;
+
+            if (works.length > 0) {
+                text += `1. РАБОТЫ:\n`;
+                works.forEach((i, idx) => { text += `${idx + 1}. ${i.name}: ${i.qty} ${i.unit} × ${i.price} = ${Math.round(i.qty * i.price)} ₽\n`; });
+                text += `\n`;
+            }
+            if (mats.length > 0) {
+                text += `2. МАТЕРИАЛЫ:\n`;
+                mats.forEach((i, idx) => { text += `${idx + 1}. ${i.name}: ${i.qty} ${i.unit} × ${i.price} = ${Math.round(i.qty * i.price)} ₽\n`; });
+                text += `\n`;
+            }
+            text += `────────────────────\n`;
+            if (proj.overhead5) text += `Расходники (+5%): +${calc.overheadSum} ₽\n`;
+            if (proj.discountPercent > 0) text += `Скидка (-${proj.discountPercent}%): -${calc.discountSum} ₽\n`;
+            text += `ВСЕГО ПО СМЕТЕ: ${calc.finalTotal.toLocaleString('ru-RU')} ₽\n`;
+            if (proj.advance > 0) text += `Аванс: -${proj.advance.toLocaleString('ru-RU')} ₽\n`;
+            text += `ОСТАТОК К ОПЛАТЕ: ${calc.balance.toLocaleString('ru-RU')} ₽`;
+            return text;
+        }
+
+        function copyTextEstimate() {
+            trackGoal('copy_estimate');
+            const text = generateEstimateText();
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(() => showToast('Смета скопирована в буфер обмена')).catch(() => fallbackCopy(text));
+            } else {
+                fallbackCopy(text);
+            }
+        }
+
+        function fallbackCopy(text) {
+            const tempInput = document.createElement('textarea');
+            tempInput.value = text;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+            showToast('Смета скопирована в буфер обмена');
+        }
+
+        function openShareSheet() {
+            trackGoal('open_share_sheet');
+            const text = generateEstimateText();
+            const encoded = encodeURIComponent(text);
+
+            document.getElementById('sheetTitle').innerText = 'Отправить смету клиенту';
+            document.getElementById('sheetBody').innerHTML = `
+                <div class="space-y-2.5">
+                    <a href="https://max.ru/share?text=${encoded}" target="_blank" onclick="trackGoal('share_max'); closeSheet();" class="w-full p-4 rounded-2xl bg-indigo-600 text-white font-extrabold text-xs uppercase tracking-wider flex items-center justify-center shadow-md active:scale-95 transition">
+                        <span>Переслать в MAX мессенджер</span>
+                    </a>
+                    <a href="https://t.me/share/url?url=${encoded}" target="_blank" onclick="trackGoal('share_tg'); closeSheet();" class="w-full p-4 rounded-2xl bg-zinc-950 text-white font-extrabold text-xs uppercase tracking-wider flex items-center justify-center active:scale-95 transition">
+                        <span>Отправить в Telegram</span>
+                    </a>
+                    <a href="https://wa.me/?text=${encoded}" target="_blank" onclick="trackGoal('share_wa'); closeSheet();" class="w-full p-4 rounded-2xl bg-[#F4F4F6] text-zinc-950 border border-zinc-200 font-extrabold text-xs uppercase tracking-wider flex items-center justify-center active:scale-95 transition">
+                        <span>Отправить в WhatsApp</span>
+                    </a>
+                    <button onclick="closeSheet(); copyTextEstimate();" class="w-full p-4 rounded-2xl bg-[#F4F4F6] text-zinc-950 border border-zinc-200 font-extrabold text-xs uppercase tracking-wider flex items-center justify-center active:scale-95 transition">
+                        <span>Скопировать текст для чата</span>
+                    </button>
+                    <button onclick="closeSheet(); openOfficialEstimateModal();" class="w-full p-4 rounded-2xl bg-[#F4F4F6] text-zinc-950 border border-zinc-200 font-extrabold text-xs uppercase tracking-wider flex items-center justify-center active:scale-95 transition">
+                        <span>Открыть PDF-бланк / Договор</span>
+                    </button>
+                </div>
+            `;
+            showSheet();
+        }
+
+        function openAdvanceModal() {
+            const proj = getCurrentProject();
+            document.getElementById('sheetTitle').innerText = 'Аванс от клиента';
+            document.getElementById('sheetBody').innerHTML = `
+                <div>
+                    <label class="text-xs font-extrabold text-zinc-500 uppercase">Сумма полученного аванса (₽)</label>
+                    <input id="shAdvInput" type="number" value="${proj.advance}" class="w-full mt-1.5 p-3.5 rounded-2xl bg-[#F4F4F6] border border-zinc-200 text-zinc-950 font-mono-num font-extrabold text-xl">
+                </div>
+                <button onclick="saveAdvance()" class="w-full p-4 rounded-2xl cal-btn-black font-extrabold text-xs uppercase tracking-wider">Обновить аванс</button>
+            `;
+            showSheet();
+        }
+
+        function saveAdvance() {
+            const proj = getCurrentProject();
+            proj.advance = parseInt(document.getElementById('shAdvInput').value) || 0;
+            closeSheet();
+            saveState();
+            showToast('Аванс обновлен');
+        }
+
+        function openProjectSheet() {
+            document.getElementById('sheetTitle').innerText = 'Мои объекты';
+            const listHtml = state.projects.map(p => `
+                <div class="p-3.5 rounded-2xl ${p.id === state.currentProjectId ? 'bg-zinc-950 text-white' : 'bg-[#F4F4F6] text-zinc-950'} flex justify-between items-center">
+                    <div onclick="selectProject('${p.id}')" class="flex-1 cursor-pointer">
+                        <div class="font-extrabold text-sm">${p.name}</div>
+                        <div class="text-xs opacity-70 mt-0.5">Позиций: ${p.items.length}</div>
+                    </div>
+                    ${state.projects.length > 1 ? `<button onclick="deleteProject('${p.id}')" class="p-2 opacity-60 hover:opacity-100"><i data-lucide="trash-2" class="w-4 h-4"></i></button>` : ''}
+                </div>
+            `).join('');
+
+            document.getElementById('sheetBody').innerHTML = `
+                <div class="space-y-2 max-h-60 overflow-y-auto">${listHtml}</div>
+                <div class="pt-3 border-t border-zinc-200 space-y-2">
+                    <label class="text-xs font-extrabold text-zinc-500 uppercase">Новый объект</label>
+                    <div class="flex gap-2">
+                        <input id="newProjName" placeholder="Название (например: Кв. на Ленина)..." class="flex-1 p-3.5 rounded-2xl bg-[#F4F4F6] border border-zinc-200 text-zinc-950 text-sm font-bold">
+                        <button onclick="createNewProject()" class="px-5 rounded-2xl cal-btn-black font-extrabold text-xs uppercase">Создать</button>
+                    </div>
+                </div>
+            `;
+            showSheet();
+            try { lucide.createIcons(); } catch (e) {}
+        }
+
+        function selectProject(id) {
+            state.currentProjectId = id;
+            closeSheet();
+            saveState();
+            showToast('Объект переключен');
+        }
+
+        function createNewProject() {
+            const name = document.getElementById('newProjName').value.trim();
+            if (!name) return;
+            const newId = 'proj_' + Date.now();
+            state.projects.push({ id: newId, name, advance: 0, overhead5: false, discountPercent: 0, items: [] });
+            state.currentProjectId = newId;
+            closeSheet();
+            saveState();
+            showToast('Объект создан');
+        }
+
+        function deleteProject(id) {
+            if (state.projects.length <= 1) return;
+            state.projects = state.projects.filter(p => p.id !== id);
+            if (state.currentProjectId === id) state.currentProjectId = state.projects[0].id;
+            closeSheet();
+            saveState();
+            showToast('Объект удален');
+        }
+
+        function openClearConfirmSheet() {
+            document.getElementById('sheetTitle').innerText = 'Очистить смету?';
+            document.getElementById('sheetBody').innerHTML = `
+                <p class="text-zinc-600 font-medium">Все позиции текущего объекта будут удалены безвозвратно.</p>
+                <div class="flex gap-2.5 pt-2">
+                    <button onclick="closeSheet()" class="flex-1 p-4 rounded-2xl bg-[#F4F4F6] text-zinc-900 font-extrabold text-xs uppercase">Отмена</button>
+                    <button onclick="confirmClearEstimate()" class="flex-1 p-4 rounded-2xl bg-red-600 text-white font-extrabold text-xs uppercase">Очистить</button>
+                </div>
+            `;
+            showSheet();
+        }
+
+        function confirmClearEstimate() {
+            const proj = getCurrentProject();
+            proj.items = [];
+            proj.advance = 0;
+            proj.overhead5 = false;
+            proj.discountPercent = 0;
+            closeSheet();
+            saveState();
+            showToast('Смета очищена');
+        }
+
+        function showSheet() {
+            const b = document.getElementById('bottomSheetBackdrop');
+            const c = document.getElementById('bottomSheetContent');
+            b.classList.remove('hidden');
+            setTimeout(() => { b.classList.remove('opacity-0'); c.classList.remove('translate-y-full'); }, 10);
+        }
+
+        function closeSheet() {
+            const b = document.getElementById('bottomSheetBackdrop');
+            const c = document.getElementById('bottomSheetContent');
+            b.classList.add('opacity-0');
+            c.classList.add('translate-y-full');
+            setTimeout(() => b.classList.add('hidden'), 300);
+        }
+
+        function showToast(text) {
+            const t = document.getElementById('proToast');
+            document.getElementById('proToastText').innerText = text;
+            t.classList.remove('hidden');
+            setTimeout(() => t.classList.add('hidden'), 3000);
+        }
+
+        loadState();
+    </script>
+</body>
+</html>
