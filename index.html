@@ -1,1 +1,345 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ГолосМастера v0.6 — Сметчик Cal AI Edition</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=Inter:wght@500;600;700;800&family=JetBrains+Mono:wght@600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #F4F4F6;
+            color: #09090B;
+            font-family: 'Inter', -apple-system, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            overflow-x: hidden;
+        }
+        .font-display { font-family: 'Plus Jakarta Sans', 'Inter', sans-serif; }
+        .font-mono-num { font-family: 'JetBrains Mono', monospace; }
+        
+        .cal-card {
+            background: #FFFFFF;
+            border-radius: 28px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04), 0 2px 6px rgba(0, 0, 0, 0.02);
+            border: 1px solid rgba(0, 0, 0, 0.06);
+        }
 
+        .cal-btn-black {
+            background: #09090B;
+            color: #FFFFFF;
+            box-shadow: 0 10px 25px -5px rgba(9, 9, 11, 0.35);
+        }
+
+        #bottomSheetBackdrop { transition: opacity 0.3s ease; }
+        #bottomSheetContent { transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
+        .ring-progress { transition: stroke-dashoffset 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+
+        /* Официальный печатный бланк PDF-договора */
+        #printDocument { display: none; }
+        @media print {
+            .no-print { display: none !important; }
+            body { background: #FFFFFF !important; color: #000000 !important; padding: 0 !important; max-width: 100% !important; }
+            #printDocument { display: block !important; width: 100%; padding: 10px; font-family: 'Inter', sans-serif; }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between max-w-md mx-auto relative pb-36">
+
+    <!-- ВЕРХНЯЯ ШАПКА ПРИЛОЖЕНИЯ -->
+    <header class="no-print px-4 pt-4 pb-2 bg-[#F4F4F6]/90 backdrop-blur-md sticky top-0 z-30">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+                <div class="w-11 h-11 rounded-2xl bg-zinc-950 flex items-center justify-center shadow-sm shrink-0">
+                    <i data-lucide="clipboard-list" class="w-5 h-5 text-white stroke-[2.2]"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="font-extrabold text-base tracking-tight text-zinc-950 font-display">ГолосМастера</span>
+                        <span class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-zinc-950 text-white">v0.6</span>
+                    </div>
+                    <button onclick="openMasterProfileModal()" class="text-[11px] text-zinc-600 font-bold flex items-center gap-1 mt-0.5 hover:text-zinc-950">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                        <span id="masterHeaderLabel" class="underline decoration-zinc-300">Визитка PDF</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Переключатель объектов + Быстрое создание объекта -->
+            <div class="flex items-center gap-1.5">
+                <button onclick="openProjectSheet()" class="bg-white px-3 py-2 rounded-2xl flex items-center gap-2 active:scale-95 transition shadow-sm border border-zinc-200">
+                    <div class="text-left">
+                        <div class="text-[9px] text-zinc-500 uppercase font-extrabold tracking-wider">Объект</div>
+                        <div id="currentProjName" class="text-xs font-extrabold text-zinc-950 truncate max-w-[110px]">ЖК Сити Парк, 84</div>
+                    </div>
+                    <i data-lucide="chevron-down" class="w-4 h-4 text-zinc-950"></i>
+                </button>
+                <button onclick="openNewProjectQuick()" class="w-10 h-10 rounded-2xl bg-zinc-950 text-white flex items-center justify-center active:scale-95 transition shadow-sm" title="Добавить новый объект">
+                    <i data-lucide="folder-plus" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- ОСНОВНОЙ ЭКРАН СМЕТЫ -->
+    <main class="no-print px-4 pt-2 space-y-4 flex-1">
+
+        <!-- ГЛАВНЫЙ ДАШБОРД В СТИЛЕ CAL AI -->
+        <div class="cal-card p-5">
+            <div class="flex items-center justify-between">
+                <div>
+                    <span class="text-xs font-bold text-zinc-500 uppercase tracking-wider">Остаток к оплате клиентом</span>
+                    <div id="heroBalance" class="text-4xl font-extrabold font-mono-num text-zinc-950 mt-1 tracking-tight">0 ₽</div>
+                    <div class="inline-flex items-center gap-1.5 mt-2.5 px-3 py-1 rounded-full bg-zinc-100 text-zinc-800 text-xs font-bold">
+                        <i data-lucide="calculator" class="w-3.5 h-3.5 text-zinc-950"></i>
+                        <span id="totalBudgetText">Всего по смете: 0 ₽</span>
+                    </div>
+                </div>
+
+                <!-- Кольцо прогресса оплаты + Кнопка Официального PDF -->
+                <div class="relative w-20 h-20 flex items-center justify-center shrink-0">
+                    <svg class="w-20 h-20 -rotate-90" viewBox="0 0 80 80">
+                        <circle cx="40" cy="40" r="32" stroke="#F4F4F5" stroke-width="8" fill="none" />
+                        <circle id="ringCircle" cx="40" cy="40" r="32" stroke="#09090B" stroke-width="8" fill="none" stroke-dasharray="201" stroke-dashoffset="45" stroke-linecap="round" class="ring-progress" />
+                    </svg>
+                    <button onclick="printOfficialEstimate()" class="absolute inset-0 flex flex-col items-center justify-center active:scale-90 transition" title="Сформировать официальный PDF-бланк">
+                        <i data-lucide="printer" class="w-5 h-5 text-zinc-950"></i>
+                        <span class="text-[9px] font-extrabold uppercase text-zinc-700 mt-0.5">Бланк PDF</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 3 мини-виджета: Работы, Материалы, Аванс -->
+            <div class="grid grid-cols-3 gap-2 mt-5">
+                <div class="bg-[#F4F4F6] p-3 rounded-2xl border border-zinc-200/70">
+                    <div class="flex items-center gap-1.5 text-[11px] font-bold text-zinc-600">
+                        <span class="w-2 h-2 rounded-full bg-zinc-950"></span>
+                        <span>Работы</span>
+                    </div>
+                    <div id="dashWorks" class="font-extrabold font-mono-num text-sm text-zinc-950 mt-1">0 ₽</div>
+                </div>
+
+                <div class="bg-[#F4F4F6] p-3 rounded-2xl border border-zinc-200/70">
+                    <div class="flex items-center gap-1.5 text-[11px] font-bold text-zinc-600">
+                        <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                        <span>Материалы</span>
+                    </div>
+                    <div id="dashMats" class="font-extrabold font-mono-num text-sm text-zinc-950 mt-1">0 ₽</div>
+                </div>
+
+                <div onclick="openAdvanceModal()" class="bg-[#F4F4F6] p-3 rounded-2xl border border-zinc-200/70 cursor-pointer active:scale-95 transition">
+                    <div class="flex items-center justify-between text-[11px] font-bold text-zinc-600">
+                        <div class="flex items-center gap-1">
+                            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                            <span>Аванс</span>
+                        </div>
+                        <i data-lucide="pen-line" class="w-3 h-3 text-zinc-400"></i>
+                    </div>
+                    <div id="dashAdv" class="font-extrabold font-mono-num text-sm text-emerald-600 mt-1">0 ₽</div>
+                </div>
+            </div>
+
+            <!-- ПАНЕЛЬ НАДБАВОК И СКИДОК (Расходники +5% и Скидка клиенту) -->
+            <div class="grid grid-cols-2 gap-2 mt-2.5 pt-2.5 border-t border-zinc-100">
+                <button id="overheadBtn" onclick="toggleOverhead()" class="py-2.5 px-3 rounded-xl border text-xs font-extrabold flex items-center justify-between transition active:scale-95">
+                    <span class="flex items-center gap-1.5">
+                        <i data-lucide="truck" class="w-3.5 h-3.5"></i>
+                        <span>Расходники +5%</span>
+                    </span>
+                    <span id="overheadStatus" class="font-mono-num text-[11px]">ВЫКЛ</span>
+                </button>
+
+                <button id="discountBtn" onclick="openDiscountModal()" class="py-2.5 px-3 rounded-xl border text-xs font-extrabold flex items-center justify-between transition active:scale-95">
+                    <span class="flex items-center gap-1.5">
+                        <i data-lucide="percent" class="w-3.5 h-3.5"></i>
+                        <span>Скидка</span>
+                    </span>
+                    <span id="discountStatus" class="font-mono-num text-[11px]">0%</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- БЛОК ГОЛОСОВОГО И БЫСТРОГО ВВОДА -->
+        <div id="voiceCard" class="cal-card p-4 transition-all">
+            <div class="flex items-center justify-between mb-2.5">
+                <div class="flex items-center gap-2">
+                    <div id="micStatusDot" class="w-7 h-7 rounded-full bg-zinc-950 text-white flex items-center justify-center transition-colors">
+                        <i data-lucide="mic" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                        <span class="text-sm font-extrabold text-zinc-950 block leading-none">Голосовой ввод сметы</span>
+                        <span id="micStatusText" class="text-[11px] font-bold text-zinc-500">Нажмите «Голос» или диктуйте с клавиатуры</span>
+                    </div>
+                </div>
+                <button onclick="loadDemoPhrase()" class="text-xs px-2.5 py-1.5 rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-900 font-extrabold transition">
+                    + Пример
+                </button>
+            </div>
+
+            <textarea id="voiceInput" rows="2" 
+                class="w-full p-3.5 bg-[#F4F4F6] border border-zinc-200 rounded-2xl text-sm text-zinc-950 font-semibold focus:outline-none focus:border-zinc-950 transition"
+                placeholder="Скажите или напишите: «Шпаклевка стен 20 м2 по 450»..."></textarea>
+
+            <div class="grid grid-cols-5 gap-2 mt-2.5">
+                <button id="micBtn" onclick="toggleVoiceRecording()" class="col-span-2 text-xs bg-[#F4F4F6] hover:bg-zinc-200 text-zinc-950 border border-zinc-300 font-extrabold px-3 py-3.5 rounded-2xl flex items-center justify-center gap-1.5 active:scale-95 transition uppercase tracking-wider">
+                    <i data-lucide="mic" class="w-4 h-4 text-red-500"></i>
+                    <span id="micBtnLabel">🎤 Голос</span>
+                </button>
+
+                <button onclick="parseLocalText()" class="col-span-3 text-xs cal-btn-black font-extrabold px-4 py-3.5 rounded-2xl flex items-center justify-center gap-1.5 active:scale-95 transition uppercase tracking-wider">
+                    <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                    <span>Разобрать в смету</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- СПИСОК 1: РАБОТЫ -->
+        <div class="space-y-2.5">
+            <div class="flex items-center justify-between px-1">
+                <h2 class="text-base font-extrabold text-zinc-950 tracking-tight">1. Работы</h2>
+                <button onclick="openItemModal('work')" class="text-xs font-extrabold text-zinc-950 bg-white px-3.5 py-1.5 rounded-xl border border-zinc-200 shadow-2xs active:scale-95 transition">
+                    + Вручную / Калькулятор
+                </button>
+            </div>
+            <div id="proWorksList" class="space-y-2.5"></div>
+        </div>
+
+        <!-- СПИСОК 2: МАТЕРИАЛЫ -->
+        <div class="space-y-2.5 pt-1">
+            <div class="flex items-center justify-between px-1">
+                <h2 class="text-base font-extrabold text-zinc-950 tracking-tight">2. Черновые материалы</h2>
+                <button onclick="openItemModal('material')" class="text-xs font-extrabold text-zinc-950 bg-white px-3.5 py-1.5 rounded-xl border border-zinc-200 shadow-2xs active:scale-95 transition">
+                    + Материал
+                </button>
+            </div>
+            <div id="proMatsList" class="space-y-2.5"></div>
+        </div>
+    </main>
+
+    <!-- ОФИЦИАЛЬНЫЙ ПЕЧАТНЫЙ БЛАНК СМЕТЫ ДЛЯ PDF -->
+    <div id="printDocument">
+        <div style="border-bottom: 2px solid #09090B; padding-bottom: 16px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+                <h1 style="font-size: 22px; font-weight: 800; margin: 0;">СМЕТА НА ВЫПОЛНЕНИЕ РАБОТ И МАТЕРИАЛЫ</h1>
+                <p id="pdfProjTitle" style="font-size: 15px; font-weight: 700; color: #3F3F46; margin: 4px 0 0 0;">Объект: —</p>
+                <p id="pdfDate" style="font-size: 12px; color: #71717A; margin: 4px 0 0 0;">Дата составления: —</p>
+            </div>
+            <div style="text-align: right;">
+                <div id="pdfMasterName" style="font-size: 14px; font-weight: 800;">Исполнитель: Частный мастер</div>
+                <div id="pdfMasterPhone" style="font-size: 13px; color: #3F3F46; margin-top: 2px;">Тел.: не указан</div>
+            </div>
+        </div>
+
+        <div id="pdfTablesContainer"></div>
+
+        <div id="pdfSummaryBlock" style="margin-top: 20px; border-top: 2px solid #09090B; padding-top: 14px; display: flex; justify-content: flex-end;"></div>
+
+        <div style="margin-top: 45px; display: flex; justify-content: space-between; font-size: 13px;">
+            <div style="width: 45%; border-top: 1px solid #71717A; padding-top: 8px;">
+                <b>Исполнитель (Мастер):</b> ________________ / Подпись
+            </div>
+            <div style="width: 45%; border-top: 1px solid #71717A; padding-top: 8px;">
+                <b>Заказчик (Клиент):</b> ________________ / Подпись
+            </div>
+        </div>
+    </div>
+
+    <!-- НИЖНЯЯ ПЛАВАЮЩАЯ ПАНЕЛЬ ДЕЙСТВИЙ -->
+    <div class="no-print fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md z-20 px-4 pb-4 pt-2 bg-gradient-to-t from-[#F4F4F6] via-[#F4F4F6]/95 to-transparent">
+        <div class="bg-white/95 backdrop-blur-md rounded-[24px] p-2 flex items-center gap-1.5 shadow-xl border border-zinc-200/80">
+            <button onclick="openShareSheet()" class="flex-1 py-3.5 px-3 rounded-2xl cal-btn-black active:scale-95 transition flex items-center justify-center gap-2 text-xs font-extrabold uppercase tracking-wider">
+                <i data-lucide="send" class="w-4 h-4"></i>
+                <span>Отправить в 1 клик</span>
+            </button>
+            <button onclick="copyTextEstimate()" class="p-3.5 rounded-2xl bg-[#F4F4F6] hover:bg-zinc-200 text-zinc-950 active:scale-95 transition" title="Скопировать текст сметы">
+                <i data-lucide="copy" class="w-5 h-5"></i>
+            </button>
+            <button onclick="openClearConfirmSheet()" class="p-3.5 rounded-2xl bg-[#F4F4F6] hover:bg-red-50 text-zinc-600 hover:text-red-600 active:scale-95 transition" title="Очистить смету">
+                <i data-lucide="trash-2" class="w-5 h-5"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- ВЫЕЗЖАЮЩАЯ ШТОРКА (BOTTOM SHEET) -->
+    <div id="bottomSheetBackdrop" onclick="closeSheet()" class="no-print fixed inset-0 bg-black/50 backdrop-blur-xs z-40 hidden opacity-0"></div>
+    <div id="bottomSheetContent" class="no-print fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-white rounded-t-[32px] p-6 z-50 translate-y-full shadow-2xl border-t border-zinc-100 space-y-4 max-h-[90vh] overflow-y-auto">
+        <div class="w-12 h-1.5 bg-zinc-200 rounded-full mx-auto -mt-1"></div>
+        <div class="flex justify-between items-center">
+            <h3 id="sheetTitle" class="font-extrabold text-lg text-zinc-950">Заголовок</h3>
+            <button onclick="closeSheet()" class="p-2 rounded-full bg-zinc-100 text-zinc-600 hover:bg-zinc-200">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+        <div id="sheetBody" class="space-y-4 text-sm"></div>
+    </div>
+
+    <!-- ТОСТ -->
+    <div id="proToast" class="no-print fixed top-16 left-1/2 -translate-x-1/2 z-50 hidden bg-zinc-950 text-white px-5 py-3.5 rounded-full text-xs font-extrabold shadow-2xl flex items-center gap-2 whitespace-nowrap border border-zinc-700">
+        <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400 shrink-0"></i>
+        <span id="proToastText">Готово!</span>
+    </div>
+
+    <script>
+        if (window.Telegram && window.Telegram.WebApp) {
+            window.Telegram.WebApp.ready();
+            window.Telegram.WebApp.expand();
+        }
+
+        const STORAGE_KEY = 'golos_mastera_cal_v06';
+
+        let state = {
+            currentProjectId: 'proj_1',
+            masterProfile: { name: 'Бригада «МастерПро»', phone: '+7 (999) 123-45-67' },
+            projects: [
+                {
+                    id: 'proj_1',
+                    name: 'ЖК Сити Парк, 84',
+                    advance: 20000,
+                    overhead5: false,
+                    discountPercent: 0,
+                    items: [
+                        { id: 1, type: 'work', name: 'Штукатурка стен по маякам', qty: 45, unit: 'м²', price: 800 },
+                        { id: 2, type: 'work', name: 'Укладка керамогранита', qty: 15, unit: 'м²', price: 2200 },
+                        { id: 3, type: 'material', name: 'Штукатурка Knauf Ротбанд 30 кг', qty: 14, unit: 'мешк.', price: 500 },
+                        { id: 4, type: 'material', name: 'Кабель ВВГнг-LS 3×2.5 (100м)', qty: 2, unit: 'бухта', price: 6200 }
+                    ]
+                }
+            ]
+        };
+
+        function loadState() {
+            try {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    state = { ...state, ...parsed };
+                }
+            } catch (e) {}
+            renderUI();
+        }
+
+        function saveState() {
+            try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+            renderUI();
+        }
+
+        function getCurrentProject() {
+            const p = state.projects.find(p => p.id === state.currentProjectId) || state.projects[0];
+            if (typeof p.overhead5 === 'undefined') p.overhead5 = false;
+            if (typeof p.discountPercent === 'undefined') p.discountPercent = 0;
+            return p;
+        }
+
+        function calculateTotals(proj) {
+            let wSum = 0, mSum = 0;
+            proj.items.forEach(item => {
+                const row = Math.round(item.qty * item.price);
+                if (item.type === 'work') wSum += row; else mSum += row;
+            });
+            const baseTotal = wSum + mSum;
+            const overheadSum = proj.overhead5 ? Math.round(baseTotal * 0.05) : 0;
+            const discountSum = proj.discountPercent > 0 ? Math.round((baseTotal + overheadSum) * (proj.discountPercent / 100)) : 0;
+            const finalTotal = baseTotal + overheadSum - discountSum;
+            const balance = finalTotal - (proj.advance || 0);
+       
