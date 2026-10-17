@@ -3,7 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ГолосМастера v0.6 — Сметчик Cal AI Edition</title>
+    <title>ГолосМастера v0.75 — Сметчик Cal AI Edition</title>
+    
+    <!-- НАСТРОЙКИ ФОНОВОЙ ОТПРАВКИ ОТЗЫВОВ И МЕТРИКИ (ИНТЕГРИРОВАНО) -->
+    <script type="text/javascript">
+        // 1. Токен вашего бота в Telegram (от @BotFather) для тихой доставки отзывов вам в личку:
+        const FEEDBACK_BOT_TOKEN = "AAHziIDoUJcdTpIlMUUqTQXpCCVsAa0ZXEs"; 
+        
+        // 2. Ваш личный цифровой ID (Chat ID, узнали через @userinfobot):
+        const FEEDBACK_ADMIN_CHAT_ID = "Musical_Joker"; 
+
+        // 3. Опционально: Webhook URL (для MAX или внешней CRM/таблицы, если захотите дублировать):
+        const FEEDBACK_WEBHOOK_URL = "";
+
+        // 4. Номер счетчика Яндекс.Метрики (оставьте 00000000, пока не подключили):
+        const METRIKA_ID = 00000000;
+
+        (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+        m[i].l=1*new Date();
+        for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+        k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})
+        (window, document, "script", "https://mc.yandex.ru/metrika/tag.js", "ym");
+
+        if (METRIKA_ID !== 00000000) {
+            ym(METRIKA_ID, "init", {
+                 clickmap:true,
+                 trackLinks:true,
+                 accurateTrackBounce:true,
+                 webvisor:true
+            });
+        }
+
+        function trackGoal(goalName, params = {}) {
+            try {
+                if (typeof ym === 'function' && METRIKA_ID !== 00000000) {
+                    ym(METRIKA_ID, 'reachGoal', goalName, params);
+                }
+            } catch (e) {}
+        }
+    </script>
+
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -34,83 +73,91 @@
 
         #bottomSheetBackdrop { transition: opacity 0.3s ease; }
         #bottomSheetContent { transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
-        .ring-progress { transition: stroke-dashoffset 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
 
-        /* Официальный печатный бланк PDF-договора */
-        #printDocument { display: none; }
+        textarea.resizable-area {
+            resize: vertical;
+            min-height: 88px;
+            max-height: 280px;
+        }
+
         @media print {
             .no-print { display: none !important; }
             body { background: #FFFFFF !important; color: #000000 !important; padding: 0 !important; max-width: 100% !important; }
-            #printDocument { display: block !important; width: 100%; padding: 10px; font-family: 'Inter', sans-serif; }
+            #pdfModalOverlay {
+                position: static !important;
+                display: block !important;
+                background: #FFFFFF !important;
+                padding: 0 !important;
+                overflow: visible !important;
+            }
+            #pdfModalToolbar { display: none !important; }
+            #pdfPaperCard {
+                box-shadow: none !important;
+                border: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
         }
     </style>
 </head>
 <body class="min-h-screen flex flex-col justify-between max-w-md mx-auto relative pb-36">
 
-    <!-- ВЕРХНЯЯ ШАПКА ПРИЛОЖЕНИЯ -->
-    <header class="no-print px-4 pt-4 pb-2 bg-[#F4F4F6]/90 backdrop-blur-md sticky top-0 z-30">
-        <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2.5">
-                <div class="w-11 h-11 rounded-2xl bg-zinc-950 flex items-center justify-center shadow-sm shrink-0">
+    <!-- ШАПКА ПРИЛОЖЕНИЯ -->
+    <header class="no-print px-3.5 pt-3.5 pb-2 bg-[#F4F4F6]/90 backdrop-blur-md sticky top-0 z-30">
+        <div class="flex items-center justify-between gap-1.5">
+            <div class="flex items-center gap-2 min-w-0 shrink">
+                <div class="w-10 h-10 rounded-2xl bg-zinc-950 flex items-center justify-center shadow-sm shrink-0">
                     <i data-lucide="clipboard-list" class="w-5 h-5 text-white stroke-[2.2]"></i>
                 </div>
-                <div>
-                    <div class="flex items-center gap-1.5">
-                        <span class="font-extrabold text-base tracking-tight text-zinc-950 font-display">ГолосМастера</span>
-                        <span class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-zinc-950 text-white">v0.6</span>
+                <div class="min-w-0">
+                    <div class="flex items-center gap-1">
+                        <span class="font-extrabold text-[15px] tracking-tight text-zinc-950 font-display truncate">ГолосМастера</span>
+                        <span class="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full bg-zinc-950 text-white shrink-0">v0.75</span>
                     </div>
-                    <button onclick="openMasterProfileModal()" class="text-[11px] text-zinc-600 font-bold flex items-center gap-1 mt-0.5 hover:text-zinc-950">
-                        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                        <span id="masterHeaderLabel" class="underline decoration-zinc-300">Визитка PDF</span>
+                    <button onclick="openMasterProfileModal()" class="text-[11px] text-zinc-600 font-bold flex items-center gap-1 mt-0.5 hover:text-zinc-950 max-w-full">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
+                        <span id="masterHeaderLabel" class="underline decoration-zinc-300 truncate max-w-[115px]">Визитка PDF</span>
                     </button>
                 </div>
             </div>
 
-            <!-- Переключатель объектов + Быстрое создание объекта -->
-            <div class="flex items-center gap-1.5">
-                <button onclick="openProjectSheet()" class="bg-white px-3 py-2 rounded-2xl flex items-center gap-2 active:scale-95 transition shadow-sm border border-zinc-200">
-                    <div class="text-left">
-                        <div class="text-[9px] text-zinc-500 uppercase font-extrabold tracking-wider">Объект</div>
-                        <div id="currentProjName" class="text-xs font-extrabold text-zinc-950 truncate max-w-[110px]">ЖК Сити Парк, 84</div>
-                    </div>
-                    <i data-lucide="chevron-down" class="w-4 h-4 text-zinc-950"></i>
+            <div class="flex items-center gap-1.5 shrink-0">
+                <button onclick="openFeedbackModal()" class="bg-zinc-950 text-white px-2.5 py-2 rounded-xl flex items-center gap-1 active:scale-95 transition shadow-xs text-[11px] font-extrabold shrink-0" title="Оставить отзыв или предложение">
+                    <i data-lucide="message-square-plus" class="w-3.5 h-3.5"></i>
+                    <span>Отзыв</span>
                 </button>
-                <button onclick="openNewProjectQuick()" class="w-10 h-10 rounded-2xl bg-zinc-950 text-white flex items-center justify-center active:scale-95 transition shadow-sm" title="Добавить новый объект">
-                    <i data-lucide="folder-plus" class="w-4 h-4"></i>
+                <button onclick="openProjectSheet()" class="bg-white px-2.5 py-1.5 rounded-xl flex items-center gap-1.5 active:scale-95 transition shadow-xs border border-zinc-200 max-w-[122px]">
+                    <div class="text-left min-w-0">
+                        <div class="text-[8px] text-zinc-400 uppercase font-extrabold tracking-wider leading-none">Объект</div>
+                        <div id="currentProjName" class="text-[11px] font-extrabold text-zinc-950 truncate mt-0.5">ЖК Сити Парк</div>
+                    </div>
+                    <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-zinc-950 shrink-0"></i>
                 </button>
             </div>
         </div>
     </header>
 
-    <!-- ОСНОВНОЙ ЭКРАН СМЕТЫ -->
+    <!-- ОСНОВНОЙ ЭКРАН -->
     <main class="no-print px-4 pt-2 space-y-4 flex-1">
-
-        <!-- ГЛАВНЫЙ ДАШБОРД В СТИЛЕ CAL AI -->
         <div class="cal-card p-5">
-            <div class="flex items-center justify-between">
-                <div>
-                    <span class="text-xs font-bold text-zinc-500 uppercase tracking-wider">Остаток к оплате клиентом</span>
+            <div class="flex items-center justify-between gap-2">
+                <div class="min-w-0">
+                    <span class="text-xs font-bold text-zinc-500 uppercase tracking-wider block">Остаток к оплате клиентом</span>
                     <div id="heroBalance" class="text-4xl font-extrabold font-mono-num text-zinc-950 mt-1 tracking-tight">0 ₽</div>
-                    <div class="inline-flex items-center gap-1.5 mt-2.5 px-3 py-1 rounded-full bg-zinc-100 text-zinc-800 text-xs font-bold">
-                        <i data-lucide="calculator" class="w-3.5 h-3.5 text-zinc-950"></i>
+                    
+                    <div class="inline-flex items-center gap-2 mt-3 px-3.5 py-1.5 rounded-full bg-zinc-100 border border-zinc-200/80 text-zinc-950 text-sm font-extrabold">
+                        <i data-lucide="calculator" class="w-4 h-4 text-zinc-950 shrink-0"></i>
                         <span id="totalBudgetText">Всего по смете: 0 ₽</span>
                     </div>
                 </div>
 
-                <!-- Кольцо прогресса оплаты + Кнопка Официального PDF -->
-                <div class="relative w-20 h-20 flex items-center justify-center shrink-0">
-                    <svg class="w-20 h-20 -rotate-90" viewBox="0 0 80 80">
-                        <circle cx="40" cy="40" r="32" stroke="#F4F4F5" stroke-width="8" fill="none" />
-                        <circle id="ringCircle" cx="40" cy="40" r="32" stroke="#09090B" stroke-width="8" fill="none" stroke-dasharray="201" stroke-dashoffset="45" stroke-linecap="round" class="ring-progress" />
-                    </svg>
-                    <button onclick="printOfficialEstimate()" class="absolute inset-0 flex flex-col items-center justify-center active:scale-90 transition" title="Сформировать официальный PDF-бланк">
-                        <i data-lucide="printer" class="w-5 h-5 text-zinc-950"></i>
-                        <span class="text-[9px] font-extrabold uppercase text-zinc-700 mt-0.5">Бланк PDF</span>
-                    </button>
-                </div>
+                <button id="mainMicHeroBtn" onclick="handleVoiceClick()" class="w-20 h-20 rounded-3xl bg-zinc-950 text-white flex flex-col items-center justify-center active:scale-90 transition shadow-lg shrink-0 relative group" title="Голосовой ввод">
+                    <div id="micPulseRing" class="absolute inset-0 rounded-3xl bg-zinc-950 opacity-0 transition pointer-events-none"></div>
+                    <i data-lucide="mic" id="mainMicIcon" class="w-8 h-8 text-white stroke-[2.2]"></i>
+                    <span id="mainMicLabel" class="text-[10px] font-extrabold uppercase text-zinc-300 mt-1">Голос</span>
+                </button>
             </div>
 
-            <!-- 3 мини-виджета: Работы, Материалы, Аванс -->
             <div class="grid grid-cols-3 gap-2 mt-5">
                 <div class="bg-[#F4F4F6] p-3 rounded-2xl border border-zinc-200/70">
                     <div class="flex items-center gap-1.5 text-[11px] font-bold text-zinc-600">
@@ -140,7 +187,6 @@
                 </div>
             </div>
 
-            <!-- ПАНЕЛЬ НАДБАВОК И СКИДОК (Расходники +5% и Скидка клиенту) -->
             <div class="grid grid-cols-2 gap-2 mt-2.5 pt-2.5 border-t border-zinc-100">
                 <button id="overheadBtn" onclick="toggleOverhead()" class="py-2.5 px-3 rounded-xl border text-xs font-extrabold flex items-center justify-between transition active:scale-95">
                     <span class="flex items-center gap-1.5">
@@ -160,52 +206,41 @@
             </div>
         </div>
 
-        <!-- БЛОК ГОЛОСОВОГО И БЫСТРОГО ВВОДА -->
-        <div id="voiceCard" class="cal-card p-4 transition-all">
-            <div class="flex items-center justify-between mb-2.5">
-                <div class="flex items-center gap-2">
-                    <div id="micStatusDot" class="w-7 h-7 rounded-full bg-zinc-950 text-white flex items-center justify-center transition-colors">
-                        <i data-lucide="mic" class="w-4 h-4"></i>
-                    </div>
-                    <div>
-                        <span class="text-sm font-extrabold text-zinc-950 block leading-none">Голосовой ввод сметы</span>
-                        <span id="micStatusText" class="text-[11px] font-bold text-zinc-500">Нажмите «Голос» или диктуйте с клавиатуры</span>
-                    </div>
+        <div id="voiceInputCard" class="cal-card p-4 transition-all duration-300">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-extrabold text-zinc-500 uppercase">Быстрый ввод в смету</span>
+                <button onclick="loadDemoPhrase()" class="text-xs px-3 py-1 rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-900 font-extrabold transition">
+                    + Пример фразы
+                </button>
+            </div>
+
+            <div class="relative">
+                <textarea id="voiceInput" rows="3" oninput="autoResizeTextarea(this)"
+                    class="resizable-area w-full p-3.5 pb-6 bg-[#F4F4F6] border border-zinc-200 rounded-2xl text-base text-zinc-950 font-semibold focus:outline-none focus:border-zinc-950 transition leading-snug"
+                    placeholder="Нажмите на микрофон на клавиатуре или напишите: «Шпаклевка стен 20 м2 по 450»..."></textarea>
+                
+                <div class="pointer-events-none absolute bottom-2.5 right-3 flex items-center gap-1 text-[10px] font-bold text-zinc-400">
+                    <span>Тяни</span>
+                    <i data-lucide="move-diagonal-2" class="w-3.5 h-3.5 text-zinc-400"></i>
                 </div>
-                <button onclick="loadDemoPhrase()" class="text-xs px-2.5 py-1.5 rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-900 font-extrabold transition">
-                    + Пример
-                </button>
             </div>
 
-            <textarea id="voiceInput" rows="2" 
-                class="w-full p-3.5 bg-[#F4F4F6] border border-zinc-200 rounded-2xl text-sm text-zinc-950 font-semibold focus:outline-none focus:border-zinc-950 transition"
-                placeholder="Скажите или напишите: «Шпаклевка стен 20 м2 по 450»..."></textarea>
-
-            <div class="grid grid-cols-5 gap-2 mt-2.5">
-                <button id="micBtn" onclick="toggleVoiceRecording()" class="col-span-2 text-xs bg-[#F4F4F6] hover:bg-zinc-200 text-zinc-950 border border-zinc-300 font-extrabold px-3 py-3.5 rounded-2xl flex items-center justify-center gap-1.5 active:scale-95 transition uppercase tracking-wider">
-                    <i data-lucide="mic" class="w-4 h-4 text-red-500"></i>
-                    <span id="micBtnLabel">🎤 Голос</span>
-                </button>
-
-                <button onclick="parseLocalText()" class="col-span-3 text-xs cal-btn-black font-extrabold px-4 py-3.5 rounded-2xl flex items-center justify-center gap-1.5 active:scale-95 transition uppercase tracking-wider">
-                    <i data-lucide="plus-circle" class="w-4 h-4"></i>
-                    <span>Разобрать в смету</span>
-                </button>
-            </div>
+            <button onclick="parseLocalText()" class="w-full mt-2.5 text-xs cal-btn-black font-extrabold px-4 py-3.5 rounded-2xl flex items-center justify-center gap-1.5 active:scale-95 transition uppercase tracking-wider">
+                <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                <span>Разобрать и добавить</span>
+            </button>
         </div>
 
-        <!-- СПИСОК 1: РАБОТЫ -->
         <div class="space-y-2.5">
             <div class="flex items-center justify-between px-1">
                 <h2 class="text-base font-extrabold text-zinc-950 tracking-tight">1. Работы</h2>
                 <button onclick="openItemModal('work')" class="text-xs font-extrabold text-zinc-950 bg-white px-3.5 py-1.5 rounded-xl border border-zinc-200 shadow-2xs active:scale-95 transition">
-                    + Вручную / Калькулятор
+                    + Вручную
                 </button>
             </div>
             <div id="proWorksList" class="space-y-2.5"></div>
         </div>
 
-        <!-- СПИСОК 2: МАТЕРИАЛЫ -->
         <div class="space-y-2.5 pt-1">
             <div class="flex items-center justify-between px-1">
                 <h2 class="text-base font-extrabold text-zinc-950 tracking-tight">2. Черновые материалы</h2>
@@ -217,40 +252,64 @@
         </div>
     </main>
 
-    <!-- ОФИЦИАЛЬНЫЙ ПЕЧАТНЫЙ БЛАНК СМЕТЫ ДЛЯ PDF -->
-    <div id="printDocument">
-        <div style="border-bottom: 2px solid #09090B; padding-bottom: 16px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-start;">
-            <div>
-                <h1 style="font-size: 22px; font-weight: 800; margin: 0;">СМЕТА НА ВЫПОЛНЕНИЕ РАБОТ И МАТЕРИАЛЫ</h1>
-                <p id="pdfProjTitle" style="font-size: 15px; font-weight: 700; color: #3F3F46; margin: 4px 0 0 0;">Объект: —</p>
-                <p id="pdfDate" style="font-size: 12px; color: #71717A; margin: 4px 0 0 0;">Дата составления: —</p>
+    <!-- ПОЛНОЭКРАННОЕ ОКНО ОФИЦИАЛЬНОГО PDF-БЛАНКА -->
+    <div id="pdfModalOverlay" class="fixed inset-0 bg-zinc-950/80 backdrop-blur-xs z-50 hidden overflow-y-auto p-3 sm:p-6">
+        <div class="max-w-xl mx-auto space-y-3">
+            <div id="pdfModalToolbar" class="bg-zinc-900 text-white p-3 rounded-2xl flex items-center justify-between gap-2 shadow-xl border border-zinc-800 sticky top-2 z-10">
+                <button onclick="closePdfModal()" class="px-3.5 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-xs font-extrabold flex items-center gap-1.5 active:scale-95 transition">
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                    <span>Назад</span>
+                </button>
+                <div class="flex items-center gap-2">
+                    <button onclick="copyTextEstimate()" class="px-3.5 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-xs font-extrabold flex items-center gap-1.5 active:scale-95 transition">
+                        <i data-lucide="copy" class="w-4 h-4"></i>
+                        <span>Текст</span>
+                    </button>
+                    <button onclick="triggerSystemPrint()" class="px-4 py-2.5 rounded-xl bg-white text-zinc-950 text-xs font-extrabold flex items-center gap-1.5 active:scale-95 transition shadow">
+                        <i data-lucide="printer" class="w-4 h-4"></i>
+                        <span>Печать / PDF</span>
+                    </button>
+                </div>
             </div>
-            <div style="text-align: right;">
-                <div id="pdfMasterName" style="font-size: 14px; font-weight: 800;">Исполнитель: Частный мастер</div>
-                <div id="pdfMasterPhone" style="font-size: 13px; color: #3F3F46; margin-top: 2px;">Тел.: не указан</div>
-            </div>
-        </div>
 
-        <div id="pdfTablesContainer"></div>
+            <div id="pdfPaperCard" class="bg-white text-zinc-950 rounded-2xl p-5 sm:p-8 shadow-2xl border border-zinc-200">
+                <div class="border-b-2 border-zinc-950 pb-4 mb-5 flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
+                    <div>
+                        <h1 class="text-lg sm:text-xl font-extrabold uppercase tracking-tight">Смета на выполнение работ и материалы</h1>
+                        <p id="pdfProjTitle" class="text-sm font-bold text-zinc-700 mt-1">Объект: —</p>
+                        <p id="pdfDate" class="text-xs text-zinc-500 mt-0.5">Дата составления: —</p>
+                    </div>
+                    <div class="sm:text-right pt-2 sm:pt-0 border-t sm:border-t-0 border-zinc-100">
+                        <div id="pdfMasterName" class="text-sm font-extrabold text-zinc-950">Исполнитель: Частный мастер</div>
+                        <div id="pdfMasterPhone" class="text-xs font-semibold text-zinc-600 mt-0.5">Тел.: не указан</div>
+                    </div>
+                </div>
 
-        <div id="pdfSummaryBlock" style="margin-top: 20px; border-top: 2px solid #09090B; padding-top: 14px; display: flex; justify-content: flex-end;"></div>
+                <div id="pdfTablesContainer" class="space-y-5"></div>
+                
+                <div id="pdfSummaryBlock" class="mt-6 border-t-2 border-zinc-950 pt-4 flex justify-end"></div>
 
-        <div style="margin-top: 45px; display: flex; justify-content: space-between; font-size: 13px;">
-            <div style="width: 45%; border-top: 1px solid #71717A; padding-top: 8px;">
-                <b>Исполнитель (Мастер):</b> ________________ / Подпись
-            </div>
-            <div style="width: 45%; border-top: 1px solid #71717A; padding-top: 8px;">
-                <b>Заказчик (Клиент):</b> ________________ / Подпись
+                <div class="mt-10 pt-4 grid grid-cols-1 sm:grid-cols-2 gap-6 text-xs text-zinc-700">
+                    <div class="border-t border-zinc-400 pt-2">
+                        <b>Исполнитель (Мастер):</b> ________________ / Подпись
+                    </div>
+                    <div class="border-t border-zinc-400 pt-2">
+                        <b>Заказчик (Клиент):</b> ________________ / Подпись
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- НИЖНЯЯ ПЛАВАЮЩАЯ ПАНЕЛЬ ДЕЙСТВИЙ -->
+    <!-- НИЖНЯЯ ПАНЕЛЬ ЭКСПОРТА -->
     <div class="no-print fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md z-20 px-4 pb-4 pt-2 bg-gradient-to-t from-[#F4F4F6] via-[#F4F4F6]/95 to-transparent">
         <div class="bg-white/95 backdrop-blur-md rounded-[24px] p-2 flex items-center gap-1.5 shadow-xl border border-zinc-200/80">
             <button onclick="openShareSheet()" class="flex-1 py-3.5 px-3 rounded-2xl cal-btn-black active:scale-95 transition flex items-center justify-center gap-2 text-xs font-extrabold uppercase tracking-wider">
                 <i data-lucide="send" class="w-4 h-4"></i>
                 <span>Отправить в 1 клик</span>
+            </button>
+            <button onclick="openOfficialEstimateModal()" class="p-3.5 rounded-2xl bg-[#F4F4F6] hover:bg-zinc-200 text-zinc-950 active:scale-95 transition" title="Открыть бланк PDF">
+                <i data-lucide="file-text" class="w-5 h-5"></i>
             </button>
             <button onclick="copyTextEstimate()" class="p-3.5 rounded-2xl bg-[#F4F4F6] hover:bg-zinc-200 text-zinc-950 active:scale-95 transition" title="Скопировать текст сметы">
                 <i data-lucide="copy" class="w-5 h-5"></i>
@@ -264,7 +323,7 @@
     <!-- ВЫЕЗЖАЮЩАЯ ШТОРКА (BOTTOM SHEET) -->
     <div id="bottomSheetBackdrop" onclick="closeSheet()" class="no-print fixed inset-0 bg-black/50 backdrop-blur-xs z-40 hidden opacity-0"></div>
     <div id="bottomSheetContent" class="no-print fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-white rounded-t-[32px] p-6 z-50 translate-y-full shadow-2xl border-t border-zinc-100 space-y-4 max-h-[90vh] overflow-y-auto">
-        <div class="w-12 h-1.5 bg-zinc-200 rounded-full mx-auto -mt-1"></div>
+        <div class="w-16 h-2 bg-zinc-300 rounded-full mx-auto -mt-1 cursor-grab"></div>
         <div class="flex justify-between items-center">
             <h3 id="sheetTitle" class="font-extrabold text-lg text-zinc-950">Заголовок</h3>
             <button onclick="closeSheet()" class="p-2 rounded-full bg-zinc-100 text-zinc-600 hover:bg-zinc-200">
@@ -274,745 +333,5 @@
         <div id="sheetBody" class="space-y-4 text-sm"></div>
     </div>
 
-    <!-- ТОСТ -->
-    <div id="proToast" class="no-print fixed top-16 left-1/2 -translate-x-1/2 z-50 hidden bg-zinc-950 text-white px-5 py-3.5 rounded-full text-xs font-extrabold shadow-2xl flex items-center gap-2 whitespace-nowrap border border-zinc-700">
-        <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400 shrink-0"></i>
-        <span id="proToastText">Готово!</span>
-    </div>
-
-    <script>
-        if (window.Telegram && window.Telegram.WebApp) {
-            window.Telegram.WebApp.ready();
-            window.Telegram.WebApp.expand();
-        }
-
-        const STORAGE_KEY = 'golos_mastera_cal_v06';
-
-        let state = {
-            currentProjectId: 'proj_1',
-            masterProfile: { name: 'Бригада «МастерПро»', phone: '+7 (999) 123-45-67' },
-            projects: [
-                {
-                    id: 'proj_1',
-                    name: 'ЖК Сити Парк, 84',
-                    advance: 20000,
-                    overhead5: false,
-                    discountPercent: 0,
-                    items: [
-                        { id: 1, type: 'work', name: 'Штукатурка стен по маякам', qty: 45, unit: 'м²', price: 800 },
-                        { id: 2, type: 'work', name: 'Укладка керамогранита', qty: 15, unit: 'м²', price: 2200 },
-                        { id: 3, type: 'material', name: 'Штукатурка Knauf Ротбанд 30 кг', qty: 14, unit: 'мешк.', price: 500 },
-                        { id: 4, type: 'material', name: 'Кабель ВВГнг-LS 3×2.5 (100м)', qty: 2, unit: 'бухта', price: 6200 }
-                    ]
-                }
-            ]
-        };
-
-        function loadState() {
-            try {
-                const saved = localStorage.getItem(STORAGE_KEY);
-                if (saved) {
-                    const parsed = JSON.parse(saved);
-                    state = { ...state, ...parsed };
-                }
-            } catch (e) {}
-            renderUI();
-        }
-
-        function saveState() {
-            try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
-            renderUI();
-        }
-
-        function getCurrentProject() {
-            const p = state.projects.find(p => p.id === state.currentProjectId) || state.projects[0];
-            if (typeof p.overhead5 === 'undefined') p.overhead5 = false;
-            if (typeof p.discountPercent === 'undefined') p.discountPercent = 0;
-            return p;
-        }
-
-        function calculateTotals(proj) {
-            let wSum = 0, mSum = 0;
-            proj.items.forEach(item => {
-                const row = Math.round(item.qty * item.price);
-                if (item.type === 'work') wSum += row; else mSum += row;
-            });
-            const baseTotal = wSum + mSum;
-            const overheadSum = proj.overhead5 ? Math.round(baseTotal * 0.05) : 0;
-            const discountSum = proj.discountPercent > 0 ? Math.round((baseTotal + overheadSum) * (proj.discountPercent / 100)) : 0;
-            const finalTotal = baseTotal + overheadSum - discountSum;
-            const balance = finalTotal - (proj.advance || 0);
-            return { wSum, mSum, baseTotal, overheadSum, discountSum, finalTotal, balance };
-        }
-
-        function renderUI() {
-            const proj = getCurrentProject();
-            document.getElementById('currentProjName').innerText = proj.name;
-            document.getElementById('masterHeaderLabel').innerText = state.masterProfile?.name || 'Визитка PDF';
-
-            const worksEl = document.getElementById('proWorksList');
-            const matsEl = document.getElementById('proMatsList');
-            worksEl.innerHTML = '';
-            matsEl.innerHTML = '';
-
-            proj.items.forEach(item => {
-                const total = Math.round(item.qty * item.price);
-                const isWork = item.type === 'work';
-
-                const card = `
-                    <div onclick="openItemModal('${item.type}', ${item.id})" class="cal-card p-4 flex items-center justify-between active:scale-[0.99] transition cursor-pointer hover:border-zinc-300">
-                        <div class="flex items-center gap-3 pr-2 min-w-0">
-                            <div class="w-11 h-11 rounded-2xl ${isWork ? 'bg-zinc-950 text-white' : 'bg-[#F4F4F6] text-zinc-950 border border-zinc-200'} flex items-center justify-center shrink-0">
-                                <i data-lucide="${isWork ? 'hammer' : 'package'}" class="w-5 h-5"></i>
-                            </div>
-                            <div class="min-w-0">
-                                <div class="font-extrabold text-sm text-zinc-950 leading-snug truncate">${item.name}</div>
-                                <div class="text-xs font-mono-num font-bold text-zinc-500 mt-0.5">
-                                    ${item.qty} ${item.unit} × ${item.price.toLocaleString('ru-RU')} ₽
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="flex items-center gap-2.5 shrink-0">
-                            <div class="flex items-center bg-[#F4F4F6] rounded-xl p-1 border border-zinc-200/80" onclick="event.stopPropagation()">
-                                <button onclick="quickChangeQty(${item.id}, -1)" class="w-7 h-7 rounded-lg bg-white text-zinc-950 font-extrabold text-sm flex items-center justify-center shadow-2xs active:scale-90 transition">−</button>
-                                <span class="px-2 font-mono-num font-extrabold text-xs text-zinc-950">${item.qty}</span>
-                                <button onclick="quickChangeQty(${item.id}, 1)" class="w-7 h-7 rounded-lg bg-zinc-950 text-white font-extrabold text-sm flex items-center justify-center shadow-2xs active:scale-90 transition">+</button>
-                            </div>
-
-                            <div class="text-right min-w-[78px]">
-                                <div class="font-extrabold font-mono-num text-sm text-zinc-950">${total.toLocaleString('ru-RU')} ₽</div>
-                                <div class="text-[10px] font-bold text-zinc-400">Править ›</div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                if (isWork) worksEl.innerHTML += card; else matsEl.innerHTML += card;
-            });
-
-            if (!worksEl.innerHTML) worksEl.innerHTML = '<div class="cal-card p-4 text-zinc-400 text-xs font-bold text-center">Список работ пуст</div>';
-            if (!matsEl.innerHTML) matsEl.innerHTML = '<div class="cal-card p-4 text-zinc-400 text-xs font-bold text-center">Список материалов пуст</div>';
-
-            const calc = calculateTotals(proj);
-
-            document.getElementById('dashWorks').innerText = calc.wSum.toLocaleString('ru-RU') + ' ₽';
-            document.getElementById('dashMats').innerText = calc.mSum.toLocaleString('ru-RU') + ' ₽';
-            document.getElementById('dashAdv').innerText = (proj.advance > 0 ? '-' : '') + proj.advance.toLocaleString('ru-RU') + ' ₽';
-            document.getElementById('heroBalance').innerText = calc.balance.toLocaleString('ru-RU') + ' ₽';
-            document.getElementById('totalBudgetText').innerText = `Всего по смете: ${calc.finalTotal.toLocaleString('ru-RU')} ₽`;
-
-            const ovBtn = document.getElementById('overheadBtn');
-            const ovSt = document.getElementById('overheadStatus');
-            if (proj.overhead5) {
-                ovBtn.className = 'py-2.5 px-3 rounded-xl border border-zinc-950 bg-zinc-950 text-white text-xs font-extrabold flex items-center justify-between transition active:scale-95';
-                ovSt.innerText = `+${calc.overheadSum.toLocaleString('ru-RU')} ₽`;
-            } else {
-                ovBtn.className = 'py-2.5 px-3 rounded-xl border border-zinc-200 bg-[#F4F4F6] text-zinc-700 text-xs font-extrabold flex items-center justify-between transition active:scale-95';
-                ovSt.innerText = 'ВЫКЛ';
-            }
-
-            const discBtn = document.getElementById('discountBtn');
-            const discSt = document.getElementById('discountStatus');
-            if (proj.discountPercent > 0) {
-                discBtn.className = 'py-2.5 px-3 rounded-xl border border-emerald-600 bg-emerald-50 text-emerald-900 text-xs font-extrabold flex items-center justify-between transition active:scale-95';
-                discSt.innerText = `-${proj.discountPercent}%`;
-            } else {
-                discBtn.className = 'py-2.5 px-3 rounded-xl border border-zinc-200 bg-[#F4F4F6] text-zinc-700 text-xs font-extrabold flex items-center justify-between transition active:scale-95';
-                discSt.innerText = '0%';
-            }
-
-            const ring = document.getElementById('ringCircle');
-            const circumference = 201;
-            const ratio = calc.finalTotal > 0 ? Math.min(1, Math.max(0.12, calc.balance / calc.finalTotal)) : 0.25;
-            ring.style.strokeDashoffset = Math.round(circumference * (1 - ratio));
-
-            lucide.createIcons();
-        }
-
-        function quickChangeQty(id, delta) {
-            const proj = getCurrentProject();
-            const item = proj.items.find(i => i.id === id);
-            if (!item) return;
-            const nextVal = Math.round((item.qty + delta) * 100) / 100;
-            if (nextVal <= 0) { openItemModal(item.type, item.id); return; }
-            item.qty = nextVal;
-            saveState();
-        }
-
-        function toggleOverhead() {
-            const proj = getCurrentProject();
-            proj.overhead5 = !proj.overhead5;
-            saveState();
-            showToast(proj.overhead5 ? 'Добавлены расходники (+5%)' : 'Надбавка отключена');
-        }
-
-        function openDiscountModal() {
-            const proj = getCurrentProject();
-            const presets = [0, 3, 5, 10, 15];
-            const chips = presets.map(p => `
-                <button type="button" onclick="applyDiscountPreset(${p})" class="flex-1 py-3 rounded-xl ${proj.discountPercent === p ? 'bg-zinc-950 text-white' : 'bg-[#F4F4F6] text-zinc-900 border border-zinc-200'} font-extrabold font-mono-num text-xs transition">
-                    ${p === 0 ? 'Без скидки' : '-' + p + '%'}
-                </button>
-            `).join('');
-
-            document.getElementById('sheetTitle').innerText = 'Скидка для клиента';
-            document.getElementById('sheetBody').innerHTML = `
-                <div>
-                    <label class="text-xs font-extrabold text-zinc-500 uppercase">Быстрый выбор скидки (%)</label>
-                    <div class="flex gap-1.5 mt-2">${chips}</div>
-                </div>
-                <div>
-                    <label class="text-xs font-extrabold text-zinc-500 uppercase">Свой процент (%)</label>
-                    <input id="shDiscInput" type="number" min="0" max="90" value="${proj.discountPercent}" class="w-full mt-1.5 p-3.5 rounded-2xl bg-[#F4F4F6] border border-zinc-200 text-zinc-950 font-mono-num font-extrabold text-xl">
-                </div>
-                <button onclick="saveCustomDiscount()" class="w-full p-4 rounded-2xl cal-btn-black font-extrabold text-xs uppercase tracking-wider">Применить</button>
-            `;
-            showSheet();
-        }
-
-        function applyDiscountPreset(val) {
-            document.getElementById('shDiscInput').value = val;
-            saveCustomDiscount();
-        }
-
-        function saveCustomDiscount() {
-            const proj = getCurrentProject();
-            const val = Math.max(0, Math.min(90, parseFloat(document.getElementById('shDiscInput').value) || 0));
-            proj.discountPercent = val;
-            closeSheet();
-            saveState();
-            showToast(val > 0 ? `Скидка -${val}% применена` : 'Скидка убрана');
-        }
-
-        let recognition = null;
-        let isRecording = false;
-
-        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            recognition = new SpeechRecognition();
-            recognition.lang = 'ru-RU';
-            recognition.interimResults = false;
-            recognition.maxAlternatives = 1;
-
-            recognition.onstart = () => { isRecording = true; updateMicUI(true); };
-            recognition.onresult = (event) => {
-                const transcript = event.results[0][0].transcript;
-                const input = document.getElementById('voiceInput');
-                input.value = input.value ? input.value + ' ' + transcript : transcript;
-                showToast('🎤 Распознано!');
-            };
-            recognition.onerror = () => { isRecording = false; updateMicUI(false); };
-            recognition.onend = () => { isRecording = false; updateMicUI(false); };
-        }
-
-        function toggleVoiceRecording() {
-            if (!recognition) {
-                showToast('Используйте клавиатуру телефона!');
-                document.getElementById('voiceInput').focus();
-                return;
-            }
-            if (isRecording) recognition.stop();
-            else { try { recognition.start(); } catch (e) { recognition.stop(); } }
-        }
-
-        function updateMicUI(active) {
-            const btn = document.getElementById('micBtn');
-            const label = document.getElementById('micBtnLabel');
-            const dot = document.getElementById('micStatusDot');
-            const statusText = document.getElementById('micStatusText');
-            const card = document.getElementById('voiceCard');
-
-            if (active) {
-                btn.className = 'col-span-2 text-xs bg-red-600 text-white font-extrabold px-3 py-3.5 rounded-2xl flex items-center justify-center gap-1.5 animate-pulse uppercase tracking-wider';
-                label.innerText = 'Слушаю...';
-                dot.className = 'w-7 h-7 rounded-full bg-red-600 text-white flex items-center justify-center animate-ping';
-                statusText.innerText = 'Говорите фразу...';
-                card.classList.add('ring-2', 'ring-red-500');
-            } else {
-                btn.className = 'col-span-2 text-xs bg-[#F4F4F6] hover:bg-zinc-200 text-zinc-950 border border-zinc-300 font-extrabold px-3 py-3.5 rounded-2xl flex items-center justify-center gap-1.5 active:scale-95 transition uppercase tracking-wider';
-                label.innerText = '🎤 Голос';
-                dot.className = 'w-7 h-7 rounded-full bg-zinc-950 text-white flex items-center justify-center';
-                statusText.innerText = 'Нажмите «Голос» или пишите с клавиатуры';
-                card.classList.remove('ring-2', 'ring-red-500');
-            }
-        }
-
-        const demoPhrases = [
-            "Шпаклевка стен 25 квадратов по 550 рублей",
-            "Грунтовка глубокого проникновения 4 канистры по 1200",
-            "Разводка электрики 18 точек по 1100 рублей",
-            "Плиточный клей Кнауф 10 мешков по 650"
-        ];
-        let demoIndex = 0;
-
-        function loadDemoPhrase() {
-            document.getElementById('voiceInput').value = demoPhrases[demoIndex % demoPhrases.length];
-            demoIndex++;
-        }
-
-        function parseLocalText() {
-            const input = document.getElementById('voiceInput');
-            const raw = input.value.trim();
-            if (!raw) { showToast('Введите текст!'); return; }
-
-            const numbers = raw.match(/\d+(?:[.,]\d+)?/g);
-            let qty = 1, price = 0;
-            if (numbers && numbers.length >= 2) {
-                qty = parseFloat(numbers[numbers.length - 2].replace(',', '.'));
-                price = parseFloat(numbers[numbers.length - 1].replace(',', '.'));
-            } else if (numbers && numbers.length === 1) {
-                price = parseFloat(numbers[0].replace(',', '.'));
-            }
-
-            const lower = raw.toLowerCase();
-            let unit = 'м²';
-            if (lower.includes('точ')) unit = 'точка';
-            else if (lower.includes('меш')) unit = 'мешк.';
-            else if (lower.includes('бухт')) unit = 'бухта';
-            else if (lower.includes('канист') || lower.includes('л')) unit = 'канистра';
-            else if (lower.includes('шт')) unit = 'шт.';
-            else if (lower.includes('пог') || lower.includes('м.п')) unit = 'м.п.';
-
-            const matKeywords = ['меш', 'ротбанд', 'кабель', 'клей', 'грунтовк', 'канист', 'бухт', 'смесь'];
-            const isMaterial = matKeywords.some(k => lower.includes(k));
-
-            let cleanName = raw.replace(/\bпо\s+\d+.*/i, '').replace(/\d+\s*(квадратов|квадрата|м2|м²|точек|точки|мешков|мешка|шт|штук|канистры|канистр|бухты|рублей|руб|р).*/i, '').trim();
-            if (!cleanName || cleanName.length < 2) cleanName = raw;
-            else cleanName = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
-
-            const proj = getCurrentProject();
-            proj.items.unshift({ id: Date.now(), type: isMaterial ? 'material' : 'work', name: cleanName, qty, unit, price });
-
-            input.value = '';
-            saveState();
-            showToast(`Добавлено: ${cleanName}`);
-        }
-
-        let modalSelectedType = 'work';
-        let modalSelectedUnit = 'м²';
-        let calcAddReserve10 = false;
-        const UNITS_LIST = ['м²', 'м.п.', 'точка', 'шт.', 'мешк.', 'бухта', 'канистра'];
-
-        function selectModalType(type) {
-            modalSelectedType = type;
-            const btnWork = document.getElementById('typeBtn_work');
-            const btnMat = document.getElementById('typeBtn_material');
-            if (btnWork && btnMat) {
-                btnWork.className = type === 'work' ? 'flex-1 py-3 px-3 rounded-xl bg-zinc-950 text-white font-extrabold text-xs transition shadow-sm flex items-center justify-center gap-1.5' : 'flex-1 py-3 px-3 rounded-xl bg-transparent text-zinc-600 font-bold text-xs transition flex items-center justify-center gap-1.5';
-                btnMat.className = type === 'material' ? 'flex-1 py-3 px-3 rounded-xl bg-zinc-950 text-white font-extrabold text-xs transition shadow-sm flex items-center justify-center gap-1.5' : 'flex-1 py-3 px-3 rounded-xl bg-transparent text-zinc-600 font-bold text-xs transition flex items-center justify-center gap-1.5';
-            }
-        }
-
-        function selectModalUnit(unit) {
-            modalSelectedUnit = unit;
-            UNITS_LIST.forEach(u => {
-                const el = document.getElementById('unitChip_' + u);
-                if (el) {
-                    el.className = u === unit ? 'px-3.5 py-2 rounded-xl bg-zinc-950 text-white font-extrabold text-xs transition shadow-xs shrink-0' : 'px-3.5 py-2 rounded-xl bg-[#F4F4F6] text-zinc-700 border border-zinc-200 font-bold text-xs transition shrink-0';
-                }
-            });
-        }
-
-        function toggleAreaCalculator() {
-            const box = document.getElementById('areaCalcBox');
-            if (box) box.classList.toggle('hidden');
-        }
-
-        function toggleReserve10() {
-            calcAddReserve10 = !calcAddReserve10;
-            const btn = document.getElementById('reserve10Btn');
-            if (btn) {
-                btn.className = calcAddReserve10 ? 'w-full py-2.5 px-3 rounded-xl bg-zinc-950 text-white font-extrabold text-xs flex items-center justify-between transition' : 'w-full py-2.5 px-3 rounded-xl bg-white border border-zinc-200 text-zinc-700 font-bold text-xs flex items-center justify-between transition';
-            }
-            recalcAreaLive();
-        }
-
-        function recalcAreaLive() {
-            const l = parseFloat(document.getElementById('calcLen')?.value) || 0;
-            const w = parseFloat(document.getElementById('calcWid')?.value) || 0;
-            if (l > 0 && w > 0) {
-                let area = l * w;
-                if (calcAddReserve10) area = area * 1.10;
-                document.getElementById('shQty').value = Math.round(area * 100) / 100;
-                selectModalUnit('м²');
-            }
-        }
-
-        function openItemModal(defaultType, itemId = null) {
-            const proj = getCurrentProject();
-            const item = itemId ? proj.items.find(i => i.id === itemId) : null;
-            modalSelectedType = item ? item.type : defaultType;
-            modalSelectedUnit = item ? item.unit : (modalSelectedType === 'material' ? 'мешк.' : 'м²');
-            calcAddReserve10 = false;
-
-            const unitChipsHtml = UNITS_LIST.map(u => `
-                <button type="button" id="unitChip_${u}" onclick="selectModalUnit('${u}')" class="${u === modalSelectedUnit ? 'px-3.5 py-2 rounded-xl bg-zinc-950 text-white font-extrabold text-xs transition shadow-xs shrink-0' : 'px-3.5 py-2 rounded-xl bg-[#F4F4F6] text-zinc-700 border border-zinc-200 font-bold text-xs transition shrink-0'}">
-                    ${u}
-                </button>
-            `).join('');
-
-            document.getElementById('sheetTitle').innerText = item ? 'Редактировать позицию' : 'Новая позиция';
-            document.getElementById('sheetBody').innerHTML = `
-                <div>
-                    <label class="text-xs font-extrabold text-zinc-500 uppercase">Раздел сметы</label>
-                    <div class="mt-1.5 p-1 rounded-2xl bg-[#F4F4F6] border border-zinc-200 flex gap-1">
-                        <button type="button" id="typeBtn_work" onclick="selectModalType('work')" class="${modalSelectedType === 'work' ? 'flex-1 py-3 px-3 rounded-xl bg-zinc-950 text-white font-extrabold text-xs transition shadow-sm flex items-center justify-center gap-1.5' : 'flex-1 py-3 px-3 rounded-xl bg-transparent text-zinc-600 font-bold text-xs transition flex items-center justify-center gap-1.5'}">
-                            <span>🔨 1. Работы</span>
-                        </button>
-                        <button type="button" id="typeBtn_material" onclick="selectModalType('material')" class="${modalSelectedType === 'material' ? 'flex-1 py-3 px-3 rounded-xl bg-zinc-950 text-white font-extrabold text-xs transition shadow-sm flex items-center justify-center gap-1.5' : 'flex-1 py-3 px-3 rounded-xl bg-transparent text-zinc-600 font-bold text-xs transition flex items-center justify-center gap-1.5'}">
-                            <span>📦 2. Материалы</span>
-                        </button>
-                    </div>
-                </div>
-
-                <div>
-                    <label class="text-xs font-extrabold text-zinc-500 uppercase">Наименование</label>
-                    <input id="shName" value="${item ? item.name : ''}" placeholder="Например: Укладка плитки" class="w-full mt-1.5 p-3.5 rounded-2xl bg-[#F4F4F6] border border-zinc-200 text-zinc-950 text-base font-bold focus:outline-none focus:border-zinc-950">
-                </div>
-
-                <div class="space-y-2">
-                    <div class="flex items-center justify-between">
-                        <label class="text-xs font-extrabold text-zinc-500 uppercase">Количество и Цена</label>
-                        <button type="button" onclick="toggleAreaCalculator()" class="text-xs font-extrabold text-zinc-950 bg-[#F4F4F6] px-2.5 py-1 rounded-lg border border-zinc-300 flex items-center gap-1">
-                            <span>📐 Длина × Ширина</span>
-                        </button>
-                    </div>
-
-                    <div id="areaCalcBox" class="hidden p-3.5 rounded-2xl bg-[#F4F4F6] border border-zinc-200 space-y-2.5">
-                        <div class="text-xs font-extrabold text-zinc-700">Калькулятор площади помещения:</div>
-                        <div class="grid grid-cols-2 gap-2">
-                            <input id="calcLen" oninput="recalcAreaLive()" type="number" step="any" placeholder="Длина (м)" class="p-2.5 rounded-xl bg-white border border-zinc-200 text-zinc-950 font-mono-num font-bold text-sm">
-                            <input id="calcWid" oninput="recalcAreaLive()" type="number" step="any" placeholder="Ширина (м)" class="p-2.5 rounded-xl bg-white border border-zinc-200 text-zinc-950 font-mono-num font-bold text-sm">
-                        </div>
-                        <button type="button" id="reserve10Btn" onclick="toggleReserve10()" class="w-full py-2.5 px-3 rounded-xl bg-white border border-zinc-200 text-zinc-700 font-bold text-xs flex items-center justify-between transition">
-                            <span>✂️ Добавить +10% на подрезку</span>
-                            <span class="font-mono-num font-extrabold">+10%</span>
-                        </button>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-3">
-                        <input id="shQty" type="number" step="any" value="${item ? item.qty : 10}" class="w-full p-3.5 rounded-2xl bg-[#F4F4F6] border border-zinc-200 text-zinc-950 font-mono-num font-extrabold text-lg">
-                        <input id="shPrice" type="number" step="any" value="${item ? item.price : 500}" class="w-full p-3.5 rounded-2xl bg-[#F4F4F6] border border-zinc-200 text-zinc-950 font-mono-num font-extrabold text-lg">
-                    </div>
-                </div>
-
-                <div>
-                    <label class="text-xs font-extrabold text-zinc-500 uppercase">Единица измерения</label>
-                    <div class="flex flex-wrap gap-1.5 mt-1.5">${unitChipsHtml}</div>
-                </div>
-
-                <div class="pt-2 flex gap-2.5">
-                    <button onclick="saveItemForm(${itemId})" class="flex-1 p-4 rounded-2xl cal-btn-black font-extrabold text-xs uppercase tracking-wider">Сохранить</button>
-                    ${item ? `<button onclick="deleteItem(${item.id})" class="p-4 rounded-2xl bg-red-50 text-red-600 font-extrabold text-xs">Удалить</button>` : ''}
-                </div>
-            `;
-            showSheet();
-        }
-
-        function saveItemForm(id) {
-            const proj = getCurrentProject();
-            const name = document.getElementById('shName').value.trim();
-            const qty = parseFloat(document.getElementById('shQty').value) || 1;
-            const unit = modalSelectedUnit;
-            const price = parseFloat(document.getElementById('shPrice').value) || 0;
-            const type = modalSelectedType;
-
-            if (!name) { showToast('Укажите название!'); return; }
-
-            if (id) {
-                const item = proj.items.find(i => i.id === id);
-                if (item) { item.name = name; item.qty = qty; item.unit = unit; item.price = price; item.type = type; }
-            } else {
-                proj.items.unshift({ id: Date.now(), type, name, qty, unit, price });
-            }
-
-            closeSheet();
-            saveState();
-            showToast('Сохранено');
-        }
-
-        function deleteItem(id) {
-            const proj = getCurrentProject();
-            proj.items = proj.items.filter(i => i.id !== id);
-            closeSheet();
-            saveState();
-            showToast('Удалено');
-        }
-
-        function openMasterProfileModal() {
-            document.getElementById('sheetTitle').innerText = 'Визитка мастера для PDF';
-            document.getElementById('sheetBody').innerHTML = `
-                <p class="text-xs text-zinc-500 font-semibold">Эти данные попадут в шапку официального PDF-договора.</p>
-                <div>
-                    <label class="text-xs font-extrabold text-zinc-500 uppercase">Имя / Бригада</label>
-                    <input id="shMasterName" value="${state.masterProfile?.name || ''}" class="w-full mt-1.5 p-3.5 rounded-2xl bg-[#F4F4F6] border border-zinc-200 text-zinc-950 font-bold text-base">
-                </div>
-                <div>
-                    <label class="text-xs font-extrabold text-zinc-500 uppercase">Телефон</label>
-                    <input id="shMasterPhone" value="${state.masterProfile?.phone || ''}" class="w-full mt-1.5 p-3.5 rounded-2xl bg-[#F4F4F6] border border-zinc-200 text-zinc-950 font-mono-num font-bold text-base">
-                </div>
-                <button onclick="saveMasterProfile()" class="w-full p-4 rounded-2xl cal-btn-black font-extrabold text-xs uppercase tracking-wider">Сохранить</button>
-            `;
-            showSheet();
-        }
-
-        function saveMasterProfile() {
-            state.masterProfile = {
-                name: document.getElementById('shMasterName').value.trim() || 'Частный мастер',
-                phone: document.getElementById('shMasterPhone').value.trim() || ''
-            };
-            closeSheet();
-            saveState();
-            showToast('Визитка обновлена');
-        }
-
-        function printOfficialEstimate() {
-            const proj = getCurrentProject();
-            const calc = calculateTotals(proj);
-            const works = proj.items.filter(i => i.type === 'work');
-            const mats = proj.items.filter(i => i.type === 'material');
-
-            document.getElementById('pdfProjTitle').innerText = `Объект: ${proj.name}`;
-            document.getElementById('pdfDate').innerText = `Дата составления: ${new Date().toLocaleDateString('ru-RU')}`;
-            document.getElementById('pdfMasterName').innerText = `Исполнитель: ${state.masterProfile?.name || 'Частный мастер'}`;
-            document.getElementById('pdfMasterPhone').innerText = state.masterProfile?.phone ? `Тел.: ${state.masterProfile.phone}` : '';
-
-            const buildTable = (title, arr, subtotal) => {
-                if (!arr.length) return '';
-                const rows = arr.map((item, idx) => `
-                    <tr>
-                        <td style="border: 1px solid #D4D4D8; padding: 8px; text-align: center;">${idx + 1}</td>
-                        <td style="border: 1px solid #D4D4D8; padding: 8px; font-weight: 600;">${item.name}</td>
-                        <td style="border: 1px solid #D4D4D8; padding: 8px; text-align: center;">${item.qty} ${item.unit}</td>
-                        <td style="border: 1px solid #D4D4D8; padding: 8px; text-align: right;">${item.price.toLocaleString('ru-RU')} ₽</td>
-                        <td style="border: 1px solid #D4D4D8; padding: 8px; text-align: right; font-weight: 700;">${Math.round(item.qty * item.price).toLocaleString('ru-RU')} ₽</td>
-                    </tr>
-                `).join('');
-
-                return `
-                    <h3 style="font-size: 14px; font-weight: 800; margin: 18px 0 8px 0; text-transform: uppercase;">${title}</h3>
-                    <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
-                        <thead>
-                            <tr style="background: #F4F4F5;">
-                                <th style="border: 1px solid #D4D4D8; padding: 8px; width: 36px;">№</th>
-                                <th style="border: 1px solid #D4D4D8; padding: 8px; text-align: left;">Наименование</th>
-                                <th style="border: 1px solid #D4D4D8; padding: 8px; width: 90px;">Кол-во</th>
-                                <th style="border: 1px solid #D4D4D8; padding: 8px; width: 100px; text-align: right;">Цена</th>
-                                <th style="border: 1px solid #D4D4D8; padding: 8px; width: 110px; text-align: right;">Сумма</th>
-                            </tr>
-                        </thead>
-                        <tbody>${rows}</tbody>
-                    </table>
-                    <div style="text-align: right; font-size: 13px; font-weight: 700; margin-top: 6px;">Итого: ${subtotal.toLocaleString('ru-RU')} ₽</div>
-                `;
-            };
-
-            document.getElementById('pdfTablesContainer').innerHTML = buildTable('1. Работы', works, calc.wSum) + buildTable('2. Материалы', mats, calc.mSum);
-
-            let summaryHtml = `<div style="width: 300px; font-size: 13px; line-height: 1.7;">`;
-            if (proj.overhead5) summaryHtml += `<div style="display:flex; justify-content:space-between;"><span>Расходники (+5%):</span><b>+${calc.overheadSum.toLocaleString('ru-RU')} ₽</b></div>`;
-            if (proj.discountPercent > 0) summaryHtml += `<div style="display:flex; justify-content:space-between;"><span>Скидка (-${proj.discountPercent}%):</span><b>-${calc.discountSum.toLocaleString('ru-RU')} ₽</b></div>`;
-            summaryHtml += `<div style="display:flex; justify-content:space-between; font-size: 15px; font-weight: 800; border-top: 1px solid #E4E4E7; padding-top: 4px; margin-top: 4px;"><span>ВСЕГО:</span><span>${calc.finalTotal.toLocaleString('ru-RU')} ₽</span></div>`;
-            if (proj.advance > 0) summaryHtml += `<div style="display:flex; justify-content:space-between;"><span>Аванс:</span><b>-${proj.advance.toLocaleString('ru-RU')} ₽</b></div>`;
-            summaryHtml += `<div style="display:flex; justify-content:space-between; font-size: 16px; font-weight: 800; margin-top: 4px;"><span>ОСТАТОК К ОПЛАТЕ:</span><span>${calc.balance.toLocaleString('ru-RU')} ₽</span></div></div>`;
-
-            document.getElementById('pdfSummaryBlock').innerHTML = summaryHtml;
-            window.print();
-        }
-
-        function generateEstimateText() {
-            const proj = getCurrentProject();
-            const calc = calculateTotals(proj);
-            const works = proj.items.filter(i => i.type === 'work');
-            const mats = proj.items.filter(i => i.type === 'material');
-
-            let text = `📋 СМЕТА: ${proj.name}\n`;
-            if (state.masterProfile?.name) text += `👷‍♂️ ${state.masterProfile.name} ${state.masterProfile.phone ? '(' + state.masterProfile.phone + ')' : ''}\n`;
-            text += `────────────────────\n`;
-
-            if (works.length > 0) {
-                text += `🔨 РАБОТЫ:\n`;
-                works.forEach((i, idx) => { text += `${idx + 1}. ${i.name}: ${i.qty} ${i.unit} × ${i.price} = ${Math.round(i.qty * i.price)} ₽\n`; });
-                text += `\n`;
-            }
-            if (mats.length > 0) {
-                text += `📦 МАТЕРИАЛЫ:\n`;
-                mats.forEach((i, idx) => { text += `${idx + 1}. ${i.name}: ${i.qty} ${i.unit} × ${i.price} = ${Math.round(i.qty * i.price)} ₽\n`; });
-                text += `\n`;
-            }
-            text += `────────────────────\n`;
-            if (proj.overhead5) text += `🚚 Расходники (+5%): +${calc.overheadSum} ₽\n`;
-            if (proj.discountPercent > 0) text += `🏷️ Скидка (-${proj.discountPercent}%): -${calc.discountSum} ₽\n`;
-            text += `💰 ВСЕГО ПО СМЕТЕ: ${calc.finalTotal.toLocaleString('ru-RU')} ₽\n`;
-            if (proj.advance > 0) text += `✅ Аванс: -${proj.advance.toLocaleString('ru-RU')} ₽\n`;
-            text += `🔥 ОСТАТОК К ОПЛАТЕ: ${calc.balance.toLocaleString('ru-RU')} ₽`;
-            return text;
-        }
-
-        function copyTextEstimate() {
-            const text = generateEstimateText();
-            const tempInput = document.createElement('textarea');
-            tempInput.value = text;
-            document.body.appendChild(tempInput);
-            tempInput.select();
-            document.execCommand('copy');
-            document.body.removeChild(tempInput);
-            showToast('📋 Смета скопирована!');
-        }
-
-        function openShareSheet() {
-            const text = generateEstimateText();
-            const encoded = encodeURIComponent(text);
-
-            document.getElementById('sheetTitle').innerText = 'Отправить клиенту';
-            document.getElementById('sheetBody').innerHTML = `
-                <div class="space-y-2.5">
-                    <a href="https://t.me/share/url?url=${encoded}" target="_blank" onclick="closeSheet()" class="w-full p-4 rounded-2xl bg-zinc-950 text-white font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-2">
-                        <span>✈️ Отправить в Telegram</span>
-                    </a>
-                    <a href="https://wa.me/?text=${encoded}" target="_blank" onclick="closeSheet()" class="w-full p-4 rounded-2xl bg-emerald-600 text-white font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-2">
-                        <span>💬 Отправить в WhatsApp</span>
-                    </a>
-                    <button onclick="closeSheet(); printOfficialEstimate();" class="w-full p-4 rounded-2xl bg-[#F4F4F6] text-zinc-950 border border-zinc-200 font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-2">
-                        <span>📄 Открыть PDF-бланк</span>
-                    </button>
-                </div>
-            `;
-            showSheet();
-        }
-
-        function openAdvanceModal() {
-            const proj = getCurrentProject();
-            document.getElementById('sheetTitle').innerText = 'Аванс от клиента';
-            document.getElementById('sheetBody').innerHTML = `
-                <div>
-                    <label class="text-xs font-extrabold text-zinc-500 uppercase">Сумма аванса (₽)</label>
-                    <input id="shAdvInput" type="number" value="${proj.advance}" class="w-full mt-1.5 p-3.5 rounded-2xl bg-[#F4F4F6] border border-zinc-200 text-zinc-950 font-mono-num font-extrabold text-xl">
-                </div>
-                <button onclick="saveAdvance()" class="w-full p-4 rounded-2xl cal-btn-black font-extrabold text-xs uppercase tracking-wider">Обновить</button>
-            `;
-            showSheet();
-        }
-
-        function saveAdvance() {
-            const proj = getCurrentProject();
-            proj.advance = parseInt(document.getElementById('shAdvInput').value) || 0;
-            closeSheet();
-            saveState();
-            showToast('Аванс обновлен');
-        }
-
-        function openProjectSheet() {
-            document.getElementById('sheetTitle').innerText = 'Мои объекты';
-            const listHtml = state.projects.map(p => `
-                <div class="p-3.5 rounded-2xl ${p.id === state.currentProjectId ? 'bg-zinc-950 text-white' : 'bg-[#F4F4F6] text-zinc-950'} flex justify-between items-center">
-                    <div onclick="selectProject('${p.id}')" class="flex-1 cursor-pointer">
-                        <div class="font-extrabold text-sm">${p.name}</div>
-                        <div class="text-xs opacity-70 mt-0.5">Позиций: ${p.items.length}</div>
-                    </div>
-                    ${state.projects.length > 1 ? `<button onclick="deleteProject('${p.id}')" class="p-2 opacity-60 hover:opacity-100"><i data-lucide="trash-2" class="w-4 h-4"></i></button>` : ''}
-                </div>
-            `).join('');
-
-            document.getElementById('sheetBody').innerHTML = `
-                <div class="space-y-2 max-h-60 overflow-y-auto">${listHtml}</div>
-                <div class="pt-3 border-t border-zinc-100 space-y-2">
-                    <label class="text-xs font-extrabold text-zinc-500 uppercase">Новый объект</label>
-                    <div class="flex gap-2">
-                        <input id="newProjName" placeholder="Название..." class="flex-1 p-3.5 rounded-2xl bg-[#F4F4F6] border border-zinc-200 text-zinc-950 text-sm font-bold">
-                        <button onclick="createNewProject()" class="px-5 rounded-2xl cal-btn-black font-extrabold text-xs uppercase">Создать</button>
-                    </div>
-                </div>
-            `;
-            showSheet();
-            lucide.createIcons();
-        }
-
-        function openNewProjectQuick() {
-            document.getElementById('sheetTitle').innerText = 'Новый объект';
-            document.getElementById('sheetBody').innerHTML = `
-                <div>
-                    <label class="text-xs font-extrabold text-zinc-500 uppercase">Название объекта</label>
-                    <input id="newProjName" placeholder="Например: ЖК Легенда" class="w-full mt-1.5 p-3.5 rounded-2xl bg-[#F4F4F6] border border-zinc-200 text-zinc-950 text-base font-bold">
-                </div>
-                <button onclick="createNewProject()" class="w-full p-4 rounded-2xl cal-btn-black font-extrabold text-xs uppercase tracking-wider">Создать</button>
-            `;
-            showSheet();
-        }
-
-        function selectProject(id) {
-            state.currentProjectId = id;
-            closeSheet();
-            saveState();
-            showToast('Объект переключен');
-        }
-
-        function createNewProject() {
-            const name = document.getElementById('newProjName').value.trim();
-            if (!name) return;
-            const newId = 'proj_' + Date.now();
-            state.projects.push({ id: newId, name, advance: 0, overhead5: false, discountPercent: 0, items: [] });
-            state.currentProjectId = newId;
-            closeSheet();
-            saveState();
-            showToast('Объект создан');
-        }
-
-        function deleteProject(id) {
-            if (state.projects.length <= 1) return;
-            state.projects = state.projects.filter(p => p.id !== id);
-            if (state.currentProjectId === id) state.currentProjectId = state.projects[0].id;
-            closeSheet();
-            saveState();
-            showToast('Объект удален');
-        }
-
-        function openClearConfirmSheet() {
-            document.getElementById('sheetTitle').innerText = 'Очистить смету?';
-            document.getElementById('sheetBody').innerHTML = `
-                <p class="text-zinc-600 font-medium">Все позиции текущего объекта будут удалены.</p>
-                <div class="flex gap-2.5 pt-2">
-                    <button onclick="closeSheet()" class="flex-1 p-4 rounded-2xl bg-[#F4F4F6] text-zinc-900 font-extrabold text-xs uppercase">Отмена</button>
-                    <button onclick="confirmClearEstimate()" class="flex-1 p-4 rounded-2xl bg-red-600 text-white font-extrabold text-xs uppercase">Очистить</button>
-                </div>
-            `;
-            showSheet();
-        }
-
-        function confirmClearEstimate() {
-            const proj = getCurrentProject();
-            proj.items = [];
-            proj.advance = 0;
-            proj.overhead5 = false;
-            proj.discountPercent = 0;
-            closeSheet();
-            saveState();
-            showToast('Смета очищена');
-        }
-
-        function showSheet() {
-            const b = document.getElementById('bottomSheetBackdrop');
-            const c = document.getElementById('bottomSheetContent');
-            b.classList.remove('hidden');
-            setTimeout(() => { b.classList.remove('opacity-0'); c.classList.remove('translate-y-full'); }, 10);
-        }
-
-        function closeSheet() {
-            const b = document.getElementById('bottomSheetBackdrop');
-            const c = document.getElementById('bottomSheetContent');
-            b.classList.add('opacity-0');
-            c.classList.add('translate-y-full');
-            setTimeout(() => b.classList.add('hidden'), 300);
-        }
-
-        function showToast(text) {
-            const t = document.getElementById('proToast');
-            document.getElementById('proToastText').innerText = text;
-            t.classList.remove('hidden');
-            setTimeout(() => t.classList.add('hidden'), 3000);
-        }
-
-        loadState();
-    </script>
-</body>
-</html>
+    <!-- ВСПЛЫВАЮЩИЙ ТОСТ -->
+    <div id="proToast" class="no-print fixed top-16 left-1/2 -translate-x-1/2 z-50 hidden bg-zinc-950 text-white px-5 py-3.5 rounded-full text-xs font-extrabold shadow-2xl flex items-center gap-2 whi
