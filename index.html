@@ -3,13 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ГолосМастера v0.76 — Сметчик Cal AI Edition</title>
+    <!-- Принудительно отключаем темную тему мессенджеров, чтобы верстка не ломалась -->
+    <meta name="color-scheme" content="only light">
+    <title>ГолосМастера v0.77 — Сметчик Cal AI Edition</title>
     
     <!-- НАСТРОЙКИ ФОНОВОЙ ОТПРАВКИ ОТЗЫВОВ И МЕТРИКИ -->
     <script type="text/javascript">
         const FEEDBACK_BOT_TOKEN = "AAHziIDoUJcdTpIlMUUqTQXpCCVsAa0ZXEs"; 
         const FEEDBACK_ADMIN_CHAT_ID = "Musical_Joker"; 
-        const FEEDBACK_WEBHOOK_URL = "";
+        // const FEEDBACK_WEBHOOK_URL = "";
         const METRIKA_ID = 00000000;
 
         function trackGoal(goalName, params = {}) {
@@ -25,9 +27,13 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=Inter:wght@500;600;700;800&family=JetBrains+Mono:wght@600;700;800&display=swap" rel="stylesheet">
     <style>
+        /* Жесткая фиксация светлой темы независимо от настроек телефона или мессенджера */
+        :root {
+            color-scheme: light only;
+        }
         body {
-            background-color: #F4F4F6;
-            color: #09090B;
+            background-color: #F4F4F6 !important;
+            color: #09090B !important;
             font-family: 'Inter', -apple-system, sans-serif;
             -webkit-tap-highlight-color: transparent;
             overflow-x: hidden;
@@ -36,15 +42,16 @@
         .font-mono-num { font-family: 'JetBrains Mono', monospace; }
         
         .cal-card {
-            background: #FFFFFF;
+            background: #FFFFFF !important;
+            color: #09090B !important;
             border-radius: 28px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04), 0 2px 6px rgba(0, 0, 0, 0.02);
             border: 1px solid rgba(0, 0, 0, 0.06);
         }
 
         .cal-btn-black {
-            background: #09090B;
-            color: #FFFFFF;
+            background: #09090B !important;
+            color: #FFFFFF !important;
             box-shadow: 0 10px 25px -5px rgba(9, 9, 11, 0.35);
         }
 
@@ -89,7 +96,7 @@
                 <div class="min-w-0">
                     <div class="flex items-center gap-1">
                         <span class="font-extrabold text-[15px] tracking-tight text-zinc-950 font-display truncate">ГолосМастера</span>
-                        <span class="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full bg-zinc-950 text-white shrink-0">v0.76</span>
+                        <span class="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full bg-zinc-950 text-white shrink-0">v0.77</span>
                     </div>
                     <button onclick="openMasterProfileModal()" class="text-[11px] text-zinc-600 font-bold flex items-center gap-1 mt-0.5 hover:text-zinc-950 max-w-full">
                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
@@ -103,9 +110,9 @@
                     <i data-lucide="message-square-plus" class="w-3.5 h-3.5"></i>
                     <span>Отзыв</span>
                 </button>
-                <button onclick="openProjectSheet()" class="bg-white px-2.5 py-1.5 rounded-xl flex items-center gap-1.5 active:scale-95 transition shadow-xs border border-zinc-200 max-w-[122px]">
+                <button onclick="openProjectSheet()" class="bg-white text-zinc-950 px-2.5 py-1.5 rounded-xl flex items-center gap-1.5 active:scale-95 transition shadow-xs border border-zinc-200 max-w-[122px]">
                     <div class="text-left min-w-0">
-                        <div class="text-[8px] text-zinc-400 uppercase font-extrabold tracking-wider leading-none">Объект</div>
+                        <div class="text-[8px] text-zinc-500 uppercase font-extrabold tracking-wider leading-none">Объект</div>
                         <div id="currentProjName" class="text-[11px] font-extrabold text-zinc-950 truncate mt-0.5">ЖК Сити Парк</div>
                     </div>
                     <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-zinc-950 shrink-0"></i>
@@ -299,7 +306,7 @@
 
     <!-- ВЫЕЗЖАЮЩАЯ ШТОРКА (BOTTOM SHEET) -->
     <div id="bottomSheetBackdrop" onclick="closeSheet()" class="no-print fixed inset-0 bg-black/50 backdrop-blur-xs z-40 hidden opacity-0"></div>
-    <div id="bottomSheetContent" class="no-print fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-white rounded-t-[32px] p-6 z-50 translate-y-full shadow-2xl border-t border-zinc-100 space-y-4 max-h-[90vh] overflow-y-auto">
+    <div id="bottomSheetContent" class="no-print fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-white text-zinc-950 rounded-t-[32px] p-6 z-50 translate-y-full shadow-2xl border-t border-zinc-100 space-y-4 max-h-[90vh] overflow-y-auto">
         <div class="w-16 h-2 bg-zinc-300 rounded-full mx-auto -mt-1 cursor-grab"></div>
         <div class="flex justify-between items-center">
             <h3 id="sheetTitle" class="font-extrabold text-lg text-zinc-950">Заголовок</h3>
@@ -317,7 +324,7 @@
     </div>
 
     <script>
-        const STORAGE_KEY = 'golos_mastera_cal_v076';
+        const STORAGE_KEY = 'golos_mastera_cal_v077';
 
         let state = {
             currentProjectId: 'proj_1',
@@ -330,13 +337,4 @@
                     overhead5: false,
                     discountPercent: 0,
                     items: [
-                        { id: 1, type: 'work', name: 'Штукатурка стен по маякам', qty: 45, unit: 'м²', price: 800 },
-                        { id: 2, type: 'material', name: 'Штукатурка Knauf Ротбанд 30 кг', qty: 14, unit: 'мешк.', price: 500 }
-                    ]
-                }
-            ]
-        };
-
-        function autoResizeTextarea(el) {
-            el.style.height = 'auto';
-            el.style.height = Math.max(88, el.scrollHeight) + 'px
+                        { id: 1, t
