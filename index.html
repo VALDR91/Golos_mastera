@@ -494,32 +494,80 @@
         let recognition = null;
         let isRecording = false;
 
-        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            recognition = new SpeechRecognition();
-            recognition.lang = 'ru-RU';
-            recognition.interimResults = false;
-            recognition.maxAlternatives = 1;
+        function showVoiceFallback(message) {
+            const input = document.getElementById('voiceInput');
+            if (message) showToast(message);
+            if (input) {
+                input.focus();
+                input.placeholder = 'Продиктуйте текст клавиатурой или введите вручную';
+            }
+            updateMicUI(false);
+        }
 
-            recognition.onstart = () => { isRecording = true; updateMicUI(true); };
-            recognition.onresult = (event) => {
-                const transcript = event.results[0][0].transcript;
-                const input = document.getElementById('voiceInput');
-                input.value = input.value ? input.value + ' ' + transcript : transcript;
-                showToast('🎤 Распознано!');
-            };
-            recognition.onerror = () => { isRecording = false; updateMicUI(false); };
-            recognition.onend = () => { isRecording = false; updateMicUI(false); };
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            try {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                recognition = new SpeechRecognition();
+                recognition.lang = 'ru-RU';
+                recognition.interimResults = false;
+                recognition.maxAlternatives = 1;
+
+                recognition.onstart = () => {
+                    isRecording = true;
+                    updateMicUI(true);
+                };
+                recognition.onresult = (event) => {
+                    const transcript = event.results && event.results[0] && event.results[0][0]
+                        ? event.results[0][0].transcript
+                        : '';
+                    if (!transcript) {
+                        showVoiceFallback('Не удалось распознать речь. Попробуйте ещё раз или используйте диктовку клавиатуры.');
+                        return;
+                    }
+                    const input = document.getElementById('voiceInput');
+                    input.value = input.value ? input.value + ' ' + transcript : transcript;
+                    showToast('Речь распознана');
+                };
+                recognition.onerror = (event) => {
+                    isRecording = false;
+                    updateMicUI(false);
+                    const messages = {
+                        'not-allowed': 'Нет доступа к микрофону. Проверьте разрешения браузера.',
+                        'service-not-allowed': 'Распознавание речи недоступно в этом приложении. Используйте диктовку клавиатуры.',
+                        'audio-capture': 'Микрофон недоступен. Проверьте разрешения и подключение.',
+                        'network': 'Сервис распознавания речи недоступен по сети. Попробуйте позже.',
+                        'no-speech': 'Речь не услышана. Попробуйте говорить сразу после нажатия.',
+                        'aborted': 'Запись остановлена.'
+                    };
+                    showVoiceFallback(messages[event && event.error] || 'Не удалось запустить распознавание речи. Попробуйте диктовку клавиатуры.');
+                };
+                recognition.onend = () => {
+                    isRecording = false;
+                    updateMicUI(false);
+                };
+            } catch (error) {
+                recognition = null;
+            }
         }
 
         function toggleVoiceRecording() {
             if (!recognition) {
-                showToast('Используйте клавиатуру телефона!');
-                document.getElementById('voiceInput').focus();
+                showVoiceFallback('Голосовой ввод не поддерживается здесь. Откройте клавиатуру и нажмите её микрофон.');
                 return;
             }
-            if (isRecording) recognition.stop();
-            else { try { recognition.start(); } catch (e) { recognition.stop(); } }
+            if (isRecording) {
+                try {
+                    recognition.stop();
+                } catch (error) {
+                    showVoiceFallback('Не удалось остановить запись. Попробуйте диктовку клавиатуры.');
+                }
+            } else {
+                try {
+                    recognition.start();
+                } catch (error) {
+                    showVoiceFallback('Не удалось запустить микрофон в этом окне. Попробуйте диктовку клавиатуры.');
+                }
+            }
         }
 
         function updateMicUI(active) {
