@@ -6,6 +6,7 @@
     <title>ГолосМастера — сметчик</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://st.max.ru/js/max-web-app.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=Inter:wght@500;600;700;800&family=JetBrains+Mono:wght@600;700;800&display=swap" rel="stylesheet">
     <style>
         html { font-size: 16px; }
@@ -539,7 +540,11 @@
                         'no-speech': 'Речь не услышана. Попробуйте говорить сразу после нажатия.',
                         'aborted': 'Запись остановлена.'
                     };
-                    showVoiceFallback(messages[event && event.error] || 'Не удалось запустить распознавание речи. Попробуйте диктовку клавиатуры.');
+                    if (event && (event.error === 'service-not-allowed' || event.error === 'not-allowed') && window.WebApp && window.WebApp.PermissionsManager) {
+                        requestMaxMicPermission();
+                    } else {
+                        showVoiceFallback(messages[event && event.error] || 'Не удалось запустить распознавание речи. Попробуйте диктовку клавиатуры.');
+                    }
                 };
                 recognition.onend = () => {
                     isRecording = false;
@@ -550,9 +555,38 @@
             }
         }
 
+        async function requestMaxMicPermission() {
+            const webApp = window.WebApp;
+            const manager = webApp && webApp.PermissionsManager;
+            if (!manager) {
+                showVoiceFallback('MAX Bridge не обнаружен. Обновите мини-приложение или откройте его повторно.');
+                return;
+            }
+
+            try {
+                if (!manager.isInited) await manager.init();
+                const access = await manager.requestAccess(['mic'], 'Для голосового ввода сметы');
+                const micAccess = access && access.mic;
+                if (micAccess && micAccess.appAccessGranted && micAccess.systemAccessGranted) {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    stream.getTracks().forEach(track => track.stop());
+                    showVoiceFallback('Доступ к микрофону получен. Для преобразования речи в текст нужно подключить распознавание аудио.');
+                } else {
+                    showVoiceFallback('MAX не подтвердил доступ к микрофону. Проверьте разрешения мини-приложения в настройках MAX.');
+                }
+            } catch (error) {
+                const code = error && error.error && error.error.code ? error.error.code : (error && error.name ? error.name : 'unknown');
+                showVoiceFallback('MAX не выдал доступ к микрофону (' + code + '). Проверьте Настройки MAX → Безопасность → Мини-приложения.');
+            }
+        }
+
         function toggleVoiceRecording() {
             if (!recognition) {
-                showVoiceFallback('Голосовой ввод не поддерживается здесь. Откройте клавиатуру и нажмите её микрофон.');
+                if (window.WebApp && window.WebApp.PermissionsManager) {
+                    requestMaxMicPermission();
+                } else {
+                    showVoiceFallback('Голосовой ввод не поддерживается здесь. Откройте клавиатуру и нажмите её микрофон.');
+                }
                 return;
             }
             if (isRecording) {
