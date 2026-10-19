@@ -3,31 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ГолосМастера v0.72 — Сметчик Cal AI Edition</title>
-    
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <title>ГолосМастера — сметчик</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=Inter:wght@500;600;700;800&family=JetBrains+Mono:wght@600;700;800&display=swap" rel="stylesheet">
-
-    <script type="text/javascript">
-        (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
-        m[i].l=1*new Date();
-        for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
-        k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})
-        (window, document, "script", "https://mc.yandex.ru/metrika/tag.js", "ym");
-
-        const YM_COUNTER_ID = 0;
-        if (YM_COUNTER_ID > 0) {
-            ym(YM_COUNTER_ID, "init", { clickmap: true, trackLinks: true, accurateTrackBounce: true, webvisor: true });
-        }
-        function trackGoal(goalName) {
-            try { if (YM_COUNTER_ID > 0 && typeof ym === 'function') ym(YM_COUNTER_ID, 'reachGoal', goalName); } catch (e) {}
-        }
-    </script>
-
     <style>
+        html { font-size: 16px; }
         body {
+            font-size: 16px;
             background-color: #F4F4F6;
             color: #09090B;
             font-family: 'Inter', -apple-system, sans-serif;
@@ -54,6 +37,15 @@
         #bottomSheetContent { transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
         .ring-progress { transition: stroke-dashoffset 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
 
+        .share-btn { border: 1px solid rgba(255,255,255,.28); box-shadow: 0 9px 20px rgba(0,0,0,.13); transition: transform .18s ease, filter .18s ease, box-shadow .18s ease; }
+        .share-btn:active { transform: scale(.98); filter: brightness(.94); }
+        .share-whatsapp { background: linear-gradient(135deg, #25D366 0%, #08A84F 100%); box-shadow: 0 8px 22px rgba(37,211,102,.30); }
+        .share-telegram { background: linear-gradient(135deg, #35B9FF 0%, #1677F2 100%); box-shadow: 0 8px 22px rgba(22,119,242,.28); }
+        .share-max { background: linear-gradient(135deg, #FF7A18 0%, #E82D8B 52%, #6C4BFF 100%); box-shadow: 0 8px 22px rgba(232,45,139,.28); }
+        #micBtn { border: 2px solid #D4D4D8; box-shadow: 0 4px 12px rgba(9,9,11,.08); }
+        #micBtn.is-recording { border: 3px solid #DC2626; background: #DC2626 !important; color: #FFFFFF; box-shadow: 0 0 0 2px rgba(220,38,38,.12); }
+
+        /* Официальный печатный бланк PDF-договора */
         #printDocument { display: none; }
         @media print {
             .no-print { display: none !important; }
@@ -64,46 +56,52 @@
 </head>
 <body class="min-h-screen flex flex-col justify-between max-w-md mx-auto relative pb-36">
 
+    <!-- ВЕРХНЯЯ ШАПКА ПРИЛОЖЕНИЯ -->
     <header class="no-print px-4 pt-4 pb-2 bg-[#F4F4F6]/90 backdrop-blur-md sticky top-0 z-30">
-        <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2.5">
+        <div class="flex flex-col gap-3">
+            <!-- Бренд в отдельной строке: освобождаем ширину для кнопок на телефонах -->
+            <div class="flex items-center gap-2.5 min-w-0">
                 <div class="w-11 h-11 rounded-2xl bg-zinc-950 flex items-center justify-center shadow-sm shrink-0">
                     <i data-lucide="clipboard-list" class="w-5 h-5 text-white stroke-[2.2]"></i>
                 </div>
-                <div>
-                    <div class="flex items-center gap-1.5">
+                <div class="min-w-0">
+                    <div class="flex items-center gap-1.5 flex-wrap">
                         <span class="font-extrabold text-base tracking-tight text-zinc-950 font-display">ГолосМастера</span>
-                        <span class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-zinc-950 text-white">v0.72</span>
+                        <span class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-zinc-950 text-white">v0.6</span>
                     </div>
                     <button onclick="openMasterProfileModal()" class="text-[11px] text-zinc-600 font-bold flex items-center gap-1 mt-0.5 hover:text-zinc-950">
                         <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                        <span id="masterHeaderLabel" class="underline decoration-zinc-300">Визитка и PDF</span>
+                        <span id="masterHeaderLabel" class="underline decoration-zinc-300">Визитка PDF</span>
                     </button>
                 </div>
             </div>
 
-            <!-- Правый блок с фиксированными отступами (исправлен заезд иконки) -->
-            <div class="flex items-center gap-1.5 shrink-0">
-                <button onclick="openProjectSheet()" class="bg-white px-2.5 py-2 rounded-2xl flex items-center gap-1.5 active:scale-95 transition shadow-sm border border-zinc-200">
-                    <div class="text-left">
+            <!-- Объект и действия: кнопки всегда помещаются в ширину экрана -->
+            <div class="flex items-stretch gap-2 w-full min-w-0">
+                <button onclick="openProjectSheet()" class="flex-1 min-w-0 bg-white px-3 py-2 rounded-2xl flex items-center justify-between gap-2 active:scale-[0.99] transition shadow-sm border border-zinc-200">
+                    <div class="text-left min-w-0">
                         <div class="text-[9px] text-zinc-500 uppercase font-extrabold tracking-wider">Объект</div>
-                        <div id="currentProjName" class="text-xs font-extrabold text-zinc-950 truncate max-w-[85px]">ЖК Сити Парк</div>
+                        <div id="currentProjName" class="text-xs font-extrabold text-zinc-950 truncate max-w-full">ЖК Сити Парк, 84</div>
                     </div>
                     <i data-lucide="chevron-down" class="w-4 h-4 text-zinc-950 shrink-0"></i>
                 </button>
-                <button onclick="openFeedbackModal()" class="w-10 h-10 rounded-2xl bg-white text-zinc-950 border border-zinc-200 flex items-center justify-center active:scale-95 transition shadow-sm shrink-0" title="Оставить отзыв или предложение">
-                    <i data-lucide="message-square-heart" class="w-4 h-4 text-rose-500"></i>
+                <button onclick="openReviewSheet()" class="shrink-0 min-h-11 px-2.5 rounded-2xl bg-white text-zinc-950 border border-zinc-200 flex flex-col items-center justify-center gap-1 active:scale-95 transition shadow-sm hover:bg-zinc-50" title="Оставить отзыв — нажмите, чтобы оценить приложение" aria-label="Оставить отзыв и оценить приложение">
+                    <span class="flex items-center gap-1 text-[11px] leading-none tracking-tight font-extrabold"><i data-lucide="message-square" class="w-3.5 h-3.5"></i> ОТЗЫВ</span>
+                    <span class="text-[11px] leading-none tracking-[1px] text-zinc-950" aria-hidden="true">★★★★★</span>
                 </button>
-                <button onclick="openNewProjectQuick()" class="w-10 h-10 rounded-2xl bg-zinc-950 text-white flex items-center justify-center active:scale-95 transition shadow-sm shrink-0" title="Добавить новый объект">
+                <button onclick="openNewProjectQuick()" class="w-11 h-11 shrink-0 rounded-2xl bg-zinc-950 text-white flex items-center justify-center active:scale-95 transition shadow-sm" title="Добавить новый объект" aria-label="Добавить новый объект">
                     <i data-lucide="folder-plus" class="w-4 h-4"></i>
                 </button>
             </div>
         </div>
     </header>
 
+    <!-- ОСНОВНОЙ ЭКРАН СМЕТЫ -->
     <main class="no-print px-4 pt-2 space-y-4 flex-1">
+
+        <!-- ГЛАВНЫЙ ДАШБОРД В СТИЛЕ CAL AI -->
         <div class="cal-card p-5">
-            <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center justify-between">
                 <div>
                     <span class="text-xs font-bold text-zinc-500 uppercase tracking-wider">Остаток к оплате клиентом</span>
                     <div id="heroBalance" class="text-4xl font-extrabold font-mono-num text-zinc-950 mt-1 tracking-tight">0 ₽</div>
@@ -113,20 +111,14 @@
                     </div>
                 </div>
 
-                <!-- Большая выразительная кнопка микрофона (замена старой и единственная) -->
-                <div class="relative w-24 h-24 flex items-center justify-center shrink-0">
-                    <svg class="w-24 h-24 -rotate-90" viewBox="0 0 80 80">
-                        <circle cx="40" cy="40" r="34" stroke="#F4F4F5" stroke-width="6" fill="none" />
-                        <circle id="ringCircle" cx="40" cy="40" r="34" stroke="#09090B" stroke-width="6" fill="none" stroke-dasharray="213" stroke-dashoffset="45" stroke-linecap="round" class="ring-progress" />
-                    </svg>
-                    <button id="heroMicBtn" onclick="triggerHeroVoiceInput()" class="absolute inset-2 rounded-full bg-gradient-to-tr from-zinc-950 via-zinc-900 to-zinc-800 text-white flex flex-col items-center justify-center active:scale-90 transition shadow-xl hover:shadow-2xl border-2 border-zinc-700" title="Нажать и говорить">
-                        <i data-lucide="mic" class="w-7 h-7 text-red-500 animate-pulse"></i>
-                        <span id="heroMicLabel" class="text-[10px] font-extrabold uppercase tracking-widest mt-0.5 text-zinc-200">Голос</span>
-                    </button>
-                </div>
+                <!-- Кольцо прогресса оплаты + Кнопка Официального PDF -->
+                <button id="micBtn" onclick="toggleVoiceRecording()" class="shrink-0 w-20 h-20 rounded-full border-2 border-zinc-200 bg-white flex flex-col items-center justify-center gap-1 active:scale-95 transition shadow-sm hover:bg-zinc-50" title="Начать голосовой ввод" aria-label="Голосовой ввод">
+                    <i data-lucide="mic" class="w-7 h-7 text-zinc-950"></i>
+                    <span id="micBtnLabel" class="text-xs font-extrabold uppercase text-zinc-800">ГОЛОС</span>
+                </button>
             </div>
 
-            <!-- 3 мини-виджета -->
+            <!-- 3 мини-виджета: Работы, Материалы, Аванс -->
             <div class="grid grid-cols-3 gap-2 mt-5">
                 <div class="bg-[#F4F4F6] p-3 rounded-2xl border border-zinc-200/70">
                     <div class="flex items-center gap-1.5 text-[11px] font-bold text-zinc-600">
@@ -156,7 +148,7 @@
                 </div>
             </div>
 
-            <!-- Надбавки и скидка -->
+            <!-- ПАНЕЛЬ НАДБАВОК И СКИДОК (Расходники +5% и Скидка клиенту) -->
             <div class="grid grid-cols-2 gap-2 mt-2.5 pt-2.5 border-t border-zinc-100">
                 <button id="overheadBtn" onclick="toggleOverhead()" class="py-2.5 px-3 rounded-xl border text-xs font-extrabold flex items-center justify-between transition active:scale-95">
                     <span class="flex items-center gap-1.5">
@@ -176,76 +168,59 @@
             </div>
         </div>
 
+        <!-- БЛОК ГОЛОСОВОГО И БЫСТРОГО ВВОДА -->
         <div id="voiceCard" class="cal-card p-4 transition-all">
             <div class="flex items-center justify-between mb-2.5">
                 <div class="flex items-center gap-2">
-                    <div id="micStatusDot" class="w-7 h-7 rounded-full bg-zinc-950 text-white flex items-center justify-center transition-colors shrink-0">
+                    <div id="micStatusDot" class="w-7 h-7 rounded-full bg-zinc-950 text-white flex items-center justify-center transition-colors">
                         <i data-lucide="mic" class="w-4 h-4"></i>
                     </div>
                     <div>
                         <span class="text-sm font-extrabold text-zinc-950 block leading-none">Голосовой ввод сметы</span>
-                        <span id="micStatusText" class="text-[11px] font-bold text-zinc-500">Нажмите кнопку сверху или «Говорить» ниже</span>
+                        <span id="micStatusText" class="text-[10px] font-medium text-zinc-500">Нажмите «Голос» или диктуйте с клавиатуры</span>
                     </div>
                 </div>
-                <button onclick="loadDemoPhrase()" class="text-xs px-2.5 py-1.5 rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-900 font-extrabold transition shrink-0">
+                <button onclick="loadDemoPhrase()" class="text-xs px-2.5 py-1.5 rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-900 font-extrabold transition">
                     + Пример
                 </button>
             </div>
 
             <textarea id="voiceInput" rows="2" 
                 class="w-full p-3.5 bg-[#F4F4F6] border border-zinc-200 rounded-2xl text-sm text-zinc-950 font-semibold focus:outline-none focus:border-zinc-950 transition"
-                placeholder="Диктуйте: «Шпаклевка стен 20 м2 по 450»..."></textarea>
+                placeholder="Скажите или напишите: «Шпаклевка стен 20 м2 по 450»..."></textarea>
 
-            <div class="grid grid-cols-5 gap-2 mt-2.5">
-                <button id="micBtn" onclick="toggleVoiceRecording()" class="col-span-2 text-xs bg-[#F4F4F6] hover:bg-zinc-200 text-zinc-950 border border-zinc-300 font-extrabold px-3 py-3.5 rounded-2xl flex items-center justify-center gap-1.5 active:scale-95 transition uppercase tracking-wider">
-                    <i data-lucide="mic" class="w-4 h-4 text-red-500"></i>
-                    <span id="micBtnLabel">🎤 Говорить</span>
-                </button>
-
-                <button onclick="parseLocalText()" class="col-span-3 text-xs cal-btn-black font-extrabold px-4 py-3.5 rounded-2xl flex items-center justify-center gap-1.5 active:scale-95 transition uppercase tracking-wider">
+            <div class="mt-2.5">
+                <button onclick="parseLocalText()" class="w-full text-xs cal-btn-black font-extrabold px-4 py-4 rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] transition uppercase tracking-wider">
                     <i data-lucide="plus-circle" class="w-4 h-4"></i>
                     <span>Разобрать в смету</span>
                 </button>
             </div>
         </div>
 
-        <!-- Списки работ и материалов -->
+        <!-- СПИСОК 1: РАБОТЫ -->
         <div class="space-y-2.5">
             <div class="flex items-center justify-between px-1">
-                <h2 class="text-base font-extrabold text-zinc-950 tracking-tight">1. Работы</h2>
-                <button onclick="openItemModal('work')" class="text-xs font-extrabold text-zinc-950 bg-white px-3.5 py-1.5 rounded-xl border border-zinc-200 shadow-2xs active:scale-95 transition">
+                <h2 class="text-lg font-extrabold text-zinc-950 tracking-tight">1. Работы</h2>
+                <button onclick="openItemModal('work')" class="text-sm font-extrabold text-zinc-950 bg-white px-3.5 py-2 rounded-xl border border-zinc-200 shadow-2xs active:scale-95 transition">
                     + Вручную / Калькулятор
                 </button>
             </div>
             <div id="proWorksList" class="space-y-2.5"></div>
         </div>
 
+        <!-- СПИСОК 2: МАТЕРИАЛЫ -->
         <div class="space-y-2.5 pt-1">
             <div class="flex items-center justify-between px-1">
-                <h2 class="text-base font-extrabold text-zinc-950 tracking-tight">2. Черновые материалы</h2>
-                <button onclick="openItemModal('material')" class="text-xs font-extrabold text-zinc-950 bg-white px-3.5 py-1.5 rounded-xl border border-zinc-200 shadow-2xs active:scale-95 transition">
+                <h2 class="text-lg font-extrabold text-zinc-950 tracking-tight">2. Черновые материалы</h2>
+                <button onclick="openItemModal('material')" class="text-sm font-extrabold text-zinc-950 bg-white px-3.5 py-2 rounded-xl border border-zinc-200 shadow-2xs active:scale-95 transition">
                     + Материал
                 </button>
             </div>
             <div id="proMatsList" class="space-y-2.5"></div>
         </div>
-
-        <div class="pt-2">
-            <button onclick="openFeedbackModal()" class="w-full cal-card p-3.5 flex items-center justify-between text-left active:scale-[0.99] transition hover:border-zinc-300">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
-                        <i data-lucide="message-square-heart" class="w-5 h-5"></i>
-                    </div>
-                    <div>
-                        <div class="text-xs font-extrabold text-zinc-950">Чего не хватает в приложении?</div>
-                        <div class="text-[11px] font-semibold text-zinc-500">Напишите идею или замечание — мы добавим!</div>
-                    </div>
-                </div>
-                <i data-lucide="chevron-right" class="w-4 h-4 text-zinc-400 shrink-0"></i>
-            </button>
-        </div>
     </main>
 
+    <!-- ОФИЦИАЛЬНЫЙ ПЕЧАТНЫЙ БЛАНК СМЕТЫ ДЛЯ PDF -->
     <div id="printDocument">
         <div style="border-bottom: 2px solid #09090B; padding-bottom: 16px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-start;">
             <div>
@@ -260,6 +235,7 @@
         </div>
 
         <div id="pdfTablesContainer"></div>
+
         <div id="pdfSummaryBlock" style="margin-top: 20px; border-top: 2px solid #09090B; padding-top: 14px; display: flex; justify-content: flex-end;"></div>
 
         <div style="margin-top: 45px; display: flex; justify-content: space-between; font-size: 13px;">
@@ -272,14 +248,14 @@
         </div>
     </div>
 
+    <!-- НИЖНЯЯ ПЛАВАЮЩАЯ ПАНЕЛЬ ДЕЙСТВИЙ -->
     <div class="no-print fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md z-20 px-4 pb-4 pt-2 bg-gradient-to-t from-[#F4F4F6] via-[#F4F4F6]/95 to-transparent">
         <div class="bg-white/95 backdrop-blur-md rounded-[24px] p-2 flex items-center gap-1.5 shadow-xl border border-zinc-200/80">
             <button onclick="openShareSheet()" class="flex-1 py-3.5 px-3 rounded-2xl cal-btn-black active:scale-95 transition flex items-center justify-center gap-2 text-xs font-extrabold uppercase tracking-wider">
-                <i data-lucide="send" class="w-4 h-4"></i>
                 <span>Отправить</span>
             </button>
-            <button onclick="printOfficialEstimate()" class="p-3.5 rounded-2xl bg-[#F4F4F6] hover:bg-zinc-200 text-zinc-950 active:scale-95 transition" title="Сформировать PDF-бланк">
-                <i data-lucide="printer" class="w-5 h-5"></i>
+            <button onclick="printOfficialEstimate()" class="py-3.5 px-3 rounded-2xl bg-emerald-600 text-white active:scale-95 transition flex items-center justify-center gap-2 text-xs font-extrabold" title="Сформировать PDF">
+                <i data-lucide="file-down" class="w-4 h-4"></i><span>PDF</span>
             </button>
             <button onclick="copyTextEstimate()" class="p-3.5 rounded-2xl bg-[#F4F4F6] hover:bg-zinc-200 text-zinc-950 active:scale-95 transition" title="Скопировать текст сметы">
                 <i data-lucide="copy" class="w-5 h-5"></i>
@@ -290,6 +266,7 @@
         </div>
     </div>
 
+    <!-- ВЫЕЗЖАЮЩАЯ ШТОРКА (BOTTOM SHEET) -->
     <div id="bottomSheetBackdrop" onclick="closeSheet()" class="no-print fixed inset-0 bg-black/50 backdrop-blur-xs z-40 hidden opacity-0"></div>
     <div id="bottomSheetContent" class="no-print fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-white rounded-t-[32px] p-6 z-50 translate-y-full shadow-2xl border-t border-zinc-100 space-y-4 max-h-[90vh] overflow-y-auto">
         <div class="w-12 h-1.5 bg-zinc-200 rounded-full mx-auto -mt-1"></div>
@@ -302,19 +279,20 @@
         <div id="sheetBody" class="space-y-4 text-sm"></div>
     </div>
 
-    <div id="proToast" class="no-print fixed top-16 left-1/2 -translate-x-1/2 z-50 hidden bg-zinc-950 text-white px-5 py-3.5 rounded-full text-xs font-extrabold shadow-2xl flex items-center gap-2 max-w-[92vw] text-center border border-zinc-700">
+    <!-- ТОСТ -->
+    <div id="proToast" class="no-print fixed top-16 left-1/2 -translate-x-1/2 z-50 hidden bg-zinc-950 text-white px-5 py-3.5 rounded-full text-xs font-extrabold shadow-2xl flex items-center gap-2 whitespace-nowrap border border-zinc-700">
         <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400 shrink-0"></i>
-        <span id="proToastText" class="truncate">Готово!</span>
+        <span id="proToastText">Готово!</span>
     </div>
 
     <script>
-        if (window.Telegram && window.Telegram.WebApp) {
-            window.Telegram.WebApp.ready();
-            window.Telegram.WebApp.expand();
-        }
-
         const STORAGE_KEY = 'golos_mastera_cal_v06';
-        const FEEDBACK_STORAGE_KEY = 'golos_mastera_feedbacks_v072';
+
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, ch => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            })[ch]);
+        }
 
         let state = {
             currentProjectId: 'proj_1',
@@ -342,8 +320,17 @@
                 if (saved) {
                     const parsed = JSON.parse(saved);
                     state = { ...state, ...parsed };
+                    if (!Array.isArray(state.projects) || state.projects.length === 0) state.projects = [];
+                    state.projects = state.projects.map(p => ({
+                        ...p, items: Array.isArray(p.items) ? p.items : [],
+                        advance: Math.max(0, Number(p.advance) || 0),
+                        overhead5: Boolean(p.overhead5),
+                        discountPercent: Math.max(0, Math.min(90, Number(p.discountPercent) || 0))
+                    }));
+                    if (!state.projects.length) state.projects = [{ id: 'proj_1', name: 'Новый объект', advance: 0, overhead5: false, discountPercent: 0, items: [] }];
+                    if (!state.projects.some(p => p.id === state.currentProjectId)) state.currentProjectId = state.projects[0].id;
                 }
-            } catch (e) {}
+            } catch (e) { console.warn('Не удалось загрузить сохранённую смету', e); }
             renderUI();
         }
 
@@ -376,7 +363,7 @@
         function renderUI() {
             const proj = getCurrentProject();
             document.getElementById('currentProjName').innerText = proj.name;
-            document.getElementById('masterHeaderLabel').innerText = state.masterProfile?.name || 'Визитка и PDF';
+            document.getElementById('masterHeaderLabel').innerText = state.masterProfile?.name || 'Визитка PDF';
 
             const worksEl = document.getElementById('proWorksList');
             const matsEl = document.getElementById('proMatsList');
@@ -389,13 +376,10 @@
 
                 const card = `
                     <div onclick="openItemModal('${item.type}', ${item.id})" class="cal-card p-4 flex items-center justify-between active:scale-[0.99] transition cursor-pointer hover:border-zinc-300">
-                        <div class="flex items-center gap-3 pr-2 min-w-0">
-                            <div class="w-11 h-11 rounded-2xl ${isWork ? 'bg-zinc-950 text-white' : 'bg-[#F4F4F6] text-zinc-950 border border-zinc-200'} flex items-center justify-center shrink-0">
-                                <i data-lucide="${isWork ? 'hammer' : 'package'}" class="w-5 h-5"></i>
-                            </div>
+                        <div class="flex items-center pr-2 min-w-0 flex-1">
                             <div class="min-w-0">
-                                <div class="font-extrabold text-sm text-zinc-950 leading-snug truncate">${item.name}</div>
-                                <div class="text-xs font-mono-num font-bold text-zinc-500 mt-0.5">
+                                <div class="font-extrabold text-base text-zinc-950 leading-snug">${escapeHtml(item.name)}</div>
+                                <div class="text-sm font-mono-num font-bold text-zinc-500 mt-1">
                                     ${item.qty} ${item.unit} × ${item.price.toLocaleString('ru-RU')} ₽
                                 </div>
                             </div>
@@ -448,11 +432,6 @@
                 discBtn.className = 'py-2.5 px-3 rounded-xl border border-zinc-200 bg-[#F4F4F6] text-zinc-700 text-xs font-extrabold flex items-center justify-between transition active:scale-95';
                 discSt.innerText = '0%';
             }
-
-            const ring = document.getElementById('ringCircle');
-            const circumference = 213;
-            const ratio = calc.finalTotal > 0 ? Math.min(1, Math.max(0.12, calc.balance / calc.finalTotal)) : 0.25;
-            ring.style.strokeDashoffset = Math.round(circumference * (1 - ratio));
 
             lucide.createIcons();
         }
@@ -512,82 +491,35 @@
             showToast(val > 0 ? `Скидка -${val}% применена` : 'Скидка убрана');
         }
 
-        // === ПРЯМОЙ ГОЛОСОВОЙ ВВОД СРАЗУ ПО КЛИКУ (v0.72) ===
         let recognition = null;
         let isRecording = false;
 
         if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-            try {
-                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-                recognition = new SpeechRecognition();
-                recognition.lang = 'ru-RU';
-                recognition.interimResults = true;
-                recognition.maxAlternatives = 1;
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.lang = 'ru-RU';
+            recognition.interimResults = false;
+            recognition.maxAlternatives = 1;
 
-                recognition.onstart = () => {
-                    isRecording = true;
-                    updateMicUI(true);
-                };
-
-                recognition.onresult = (event) => {
-                    let interim = '';
-                    let final = '';
-                    for (let i = event.resultIndex; i < event.results.length; ++i) {
-                        if (event.results[i].isFinal) {
-                            final += event.results[i][0].transcript;
-                        } else {
-                            interim += event.results[i][0].transcript;
-                        }
-                    }
-                    const input = document.getElementById('voiceInput');
-                    if (final) {
-                        input.value = input.value ? input.value + ' ' + final : final;
-                        showToast('🎤 Распознано!');
-                    } else if (interim) {
-                        input.value = interim;
-                    }
-                };
-
-                recognition.onerror = (err) => {
-                    isRecording = false;
-                    updateMicUI(false);
-                    showToast('Не удалось распознать голос. Попробуйте еще раз');
-                };
-
-                recognition.onend = () => {
-                    isRecording = false;
-                    updateMicUI(false);
-                };
-            } catch (err) {
-                recognition = null;
-            }
-        }
-
-        function triggerHeroVoiceInput() {
-            trackGoal('hero_voice_click');
-            toggleVoiceRecording();
+            recognition.onstart = () => { isRecording = true; updateMicUI(true); };
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                const input = document.getElementById('voiceInput');
+                input.value = input.value ? input.value + ' ' + transcript : transcript;
+                showToast('🎤 Распознано!');
+            };
+            recognition.onerror = () => { isRecording = false; updateMicUI(false); };
+            recognition.onend = () => { isRecording = false; updateMicUI(false); };
         }
 
         function toggleVoiceRecording() {
-            trackGoal('voice_input_click');
-            const input = document.getElementById('voiceInput');
-            if (input) input.focus();
-
             if (!recognition) {
-                showToast('Голосовой ввод не поддерживается в этом браузере');
+                showToast('Используйте клавиатуру телефона!');
+                document.getElementById('voiceInput').focus();
                 return;
             }
-
-            if (isRecording) {
-                try { recognition.stop(); } catch (e) {}
-            } else {
-                try {
-                    recognition.start();
-                    showToast('🎤 Слушаю вас, говорите...');
-                } catch (e) {
-                    try { recognition.stop(); recognition.start(); } catch (err) {}
-                }
-            }
+            if (isRecording) recognition.stop();
+            else { try { recognition.start(); } catch (e) { recognition.stop(); } }
         }
 
         function updateMicUI(active) {
@@ -596,29 +528,24 @@
             const dot = document.getElementById('micStatusDot');
             const statusText = document.getElementById('micStatusText');
             const card = document.getElementById('voiceCard');
-            const heroBtn = document.getElementById('heroMicBtn');
-            const heroLabel = document.getElementById('heroMicLabel');
 
             if (active) {
-                if (btn) {
-                    btn.className = 'col-span-2 text-xs bg-red-600 text-white font-extrabold px-3 py-3.5 rounded-2xl flex items-center justify-center gap-1.5 animate-pulse uppercase tracking-wider';
-                    if (label) label.innerText = 'Слушаю...';
-                }
-                if (dot) dot.className = 'w-7 h-7 rounded-full bg-red-600 text-white flex items-center justify-center animate-ping shrink-0';
-                if (statusText) statusText.innerText = 'Слушаю вашу речь... Говорите позицию';
-                if (card) card.classList.add('ring-2', 'ring-red-500');
-                if (heroBtn) heroBtn.className = 'absolute inset-2 rounded-full bg-red-600 text-white flex flex-col items-center justify-center animate-pulse shadow-2xl border-2 border-red-400';
-                if (heroLabel) heroLabel.innerText = 'Слушаю';
+                btn.className = 'is-recording shrink-0 w-20 h-20 rounded-full flex flex-col items-center justify-center gap-1 active:scale-95 transition bg-red-600 text-white';
+                btn.querySelector('i')?.classList.remove('text-zinc-950');
+                btn.querySelector('i')?.classList.remove('text-red-600');
+                btn.querySelector('i')?.classList.add('text-white');
+                label.innerText = 'СЛУШАЮ';
+                dot.className = 'w-7 h-7 rounded-full bg-red-600 text-white flex items-center justify-center';
+                statusText.innerText = 'Говорите — я записываю';
+                card.classList.add('ring-2', 'ring-red-500');
             } else {
-                if (btn) {
-                    btn.className = 'col-span-2 text-xs bg-[#F4F4F6] hover:bg-zinc-200 text-zinc-950 border border-zinc-300 font-extrabold px-3 py-3.5 rounded-2xl flex items-center justify-center gap-1.5 active:scale-95 transition uppercase tracking-wider';
-                    if (label) label.innerText = '🎤 Говорить';
-                }
-                if (dot) dot.className = 'w-7 h-7 rounded-full bg-zinc-950 text-white flex items-center justify-center shrink-0';
-                if (statusText) statusText.innerText = 'Нажмите кнопку микрофона сверху или «Говорить»';
-                if (card) card.classList.remove('ring-2', 'ring-red-500');
-                if (heroBtn) heroBtn.className = 'absolute inset-2 rounded-full bg-gradient-to-tr from-zinc-950 via-zinc-900 to-zinc-800 text-white flex flex-col items-center justify-center active:scale-90 transition shadow-xl hover:shadow-2xl border-2 border-zinc-700';
-                if (heroLabel) heroLabel.innerText = 'Голос';
+                btn.className = 'shrink-0 w-20 h-20 rounded-full border-2 border-zinc-200 bg-white flex flex-col items-center justify-center gap-1 active:scale-95 transition shadow-sm hover:bg-zinc-50';
+                btn.querySelector('i')?.classList.remove('text-white');
+                btn.querySelector('i')?.classList.add('text-zinc-950');
+                label.innerText = 'ГОЛОС';
+                dot.className = 'w-7 h-7 rounded-full bg-zinc-950 text-white flex items-center justify-center';
+                statusText.innerText = 'Нажмите на микрофон сверху или диктуйте с клавиатуры';
+                card.classList.remove('ring-2', 'ring-red-500');
             }
         }
 
@@ -638,10 +565,7 @@
         function parseLocalText() {
             const input = document.getElementById('voiceInput');
             const raw = input.value.trim();
-            if (!raw) {
-                showToast('Сначала введите или надиктуйте текст!');
-                return;
-            }
+            if (!raw) { showToast('Введите текст!'); return; }
 
             const numbers = raw.match(/\d+(?:[.,]\d+)?/g);
             let qty = 1, price = 0;
@@ -673,7 +597,6 @@
 
             input.value = '';
             saveState();
-            trackGoal('item_parsed_voice');
             showToast(`Добавлено: ${cleanName}`);
         }
 
@@ -756,7 +679,7 @@
 
                 <div>
                     <label class="text-xs font-extrabold text-zinc-500 uppercase">Наименование</label>
-                    <input id="shName" value="${item ? item.name : ''}" placeholder="Например: Укладка плитки" class="w-full mt-1.5 p-3.5 rounded-2xl bg-[#F4F4F6] border border-zinc-200 text-zinc-950 text-base font-bold focus:outline-none focus:border-zinc-950">
+                    <input id="shName" value="${item ? escapeHtml(item.name) : ''}" placeholder="Например: Укладка плитки" class="w-full mt-1.5 p-3.5 rounded-2xl bg-[#F4F4F6] border border-zinc-200 text-zinc-950 text-base font-bold focus:outline-none focus:border-zinc-950">
                 </div>
 
                 <div class="space-y-2">
@@ -801,12 +724,14 @@
         function saveItemForm(id) {
             const proj = getCurrentProject();
             const name = document.getElementById('shName').value.trim();
-            const qty = parseFloat(document.getElementById('shQty').value) || 1;
+            const qty = parseFloat(document.getElementById('shQty').value);
             const unit = modalSelectedUnit;
-            const price = parseFloat(document.getElementById('shPrice').value) || 0;
+            const price = parseFloat(document.getElementById('shPrice').value);
             const type = modalSelectedType;
 
             if (!name) { showToast('Укажите название!'); return; }
+            if (!Number.isFinite(qty) || qty <= 0) { showToast('Количество должно быть больше нуля'); return; }
+            if (!Number.isFinite(price) || price < 0) { showToast('Цена не может быть отрицательной'); return; }
 
             if (id) {
                 const item = proj.items.find(i => i.id === id);
@@ -829,23 +754,18 @@
         }
 
         function openMasterProfileModal() {
-            document.getElementById('sheetTitle').innerText = 'Визитка мастера и PDF';
+            document.getElementById('sheetTitle').innerText = 'Визитка мастера для PDF';
             document.getElementById('sheetBody').innerHTML = `
-                <p class="text-xs text-zinc-500 font-semibold">Эти данные попадут в шапку сметы и официального PDF-договора.</p>
+                <p class="text-xs text-zinc-500 font-semibold">Эти данные попадут в шапку официального PDF-договора.</p>
                 <div>
                     <label class="text-xs font-extrabold text-zinc-500 uppercase">Имя / Бригада</label>
-                    <input id="shMasterName" value="${state.masterProfile?.name || ''}" class="w-full mt-1.5 p-3.5 rounded-2xl bg-[#F4F4F6] border border-zinc-200 text-zinc-950 font-bold text-base">
+                    <input id="shMasterName" value="${escapeHtml(state.masterProfile?.name || '')}" class="w-full mt-1.5 p-3.5 rounded-2xl bg-[#F4F4F6] border border-zinc-200 text-zinc-950 font-bold text-base">
                 </div>
                 <div>
                     <label class="text-xs font-extrabold text-zinc-500 uppercase">Телефон</label>
-                    <input id="shMasterPhone" value="${state.masterProfile?.phone || ''}" class="w-full mt-1.5 p-3.5 rounded-2xl bg-[#F4F4F6] border border-zinc-200 text-zinc-950 font-mono-num font-bold text-base">
+                    <input id="shMasterPhone" value="${escapeHtml(state.masterProfile?.phone || '')}" class="w-full mt-1.5 p-3.5 rounded-2xl bg-[#F4F4F6] border border-zinc-200 text-zinc-950 font-mono-num font-bold text-base">
                 </div>
-                <div class="pt-1 space-y-2">
-                    <button onclick="saveMasterProfile()" class="w-full p-4 rounded-2xl cal-btn-black font-extrabold text-xs uppercase tracking-wider">Сохранить визитку</button>
-                    <button onclick="closeSheet(); printOfficialEstimate();" class="w-full p-3.5 rounded-2xl bg-[#F4F4F6] text-zinc-950 border border-zinc-200 font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-2">
-                        <span>🖨️ Сформировать PDF-бланк</span>
-                    </button>
-                </div>
+                <button onclick="saveMasterProfile()" class="w-full p-4 rounded-2xl cal-btn-black font-extrabold text-xs uppercase tracking-wider">Сохранить</button>
             `;
             showSheet();
         }
@@ -861,13 +781,12 @@
         }
 
         function printOfficialEstimate() {
-            trackGoal('print_pdf');
             const proj = getCurrentProject();
             const calc = calculateTotals(proj);
             const works = proj.items.filter(i => i.type === 'work');
             const mats = proj.items.filter(i => i.type === 'material');
 
-            document.getElementById('pdfProjTitle').innerText = `Объект: ${proj.name}`;
+            document.getElementById('pdfProjTitle').innerText = `Объект: ${escapeHtml(proj.name)}`;
             document.getElementById('pdfDate').innerText = `Дата составления: ${new Date().toLocaleDateString('ru-RU')}`;
             document.getElementById('pdfMasterName').innerText = `Исполнитель: ${state.masterProfile?.name || 'Частный мастер'}`;
             document.getElementById('pdfMasterPhone').innerText = state.masterProfile?.phone ? `Тел.: ${state.masterProfile.phone}` : '';
@@ -877,7 +796,7 @@
                 const rows = arr.map((item, idx) => `
                     <tr>
                         <td style="border: 1px solid #D4D4D8; padding: 8px; text-align: center;">${idx + 1}</td>
-                        <td style="border: 1px solid #D4D4D8; padding: 8px; font-weight: 600;">${item.name}</td>
+                        <td style="border: 1px solid #D4D4D8; padding: 8px; font-weight: 600;">${escapeHtml(item.name)}</td>
                         <td style="border: 1px solid #D4D4D8; padding: 8px; text-align: center;">${item.qty} ${item.unit}</td>
                         <td style="border: 1px solid #D4D4D8; padding: 8px; text-align: right;">${item.price.toLocaleString('ru-RU')} ₽</td>
                         <td style="border: 1px solid #D4D4D8; padding: 8px; text-align: right; font-weight: 700;">${Math.round(item.qty * item.price).toLocaleString('ru-RU')} ₽</td>
@@ -921,7 +840,7 @@
             const works = proj.items.filter(i => i.type === 'work');
             const mats = proj.items.filter(i => i.type === 'material');
 
-            let text = `📋 СМЕТА: ${proj.name}\n`;
+            let text = `📋 СМЕТА: ${escapeHtml(proj.name)}\n`;
             if (state.masterProfile?.name) text += `👷‍♂️ ${state.masterProfile.name} ${state.masterProfile.phone ? '(' + state.masterProfile.phone + ')' : ''}\n`;
             text += `────────────────────\n`;
 
@@ -944,141 +863,126 @@
             return text;
         }
 
-        function copyToClipboardSilent(text) {
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(text).catch(() => {});
-            }
+        function copyTextEstimate() {
+            const text = generateEstimateText();
             const tempInput = document.createElement('textarea');
             tempInput.value = text;
             document.body.appendChild(tempInput);
             tempInput.select();
-            try { document.execCommand('copy'); } catch (e) {}
+            document.execCommand('copy');
             document.body.removeChild(tempInput);
+            showToast('📋 Смета скопирована!');
         }
 
-        function copyTextEstimate() {
-            trackGoal('copy_estimate');
-            const text = generateEstimateText();
-            copyToClipboardSilent(text);
-            showToast('📋 Смета скопирована в буфер!');
+        async function shareToMax() {
+            const estimate = generateEstimateText();
+            try {
+                if (navigator.share) {
+                    await navigator.share({ title: 'Смета — ГолосМастера', text: estimate });
+                    closeSheet();
+                    return;
+                }
+                if (navigator.clipboard && window.isSecureContext) {
+                    await navigator.clipboard.writeText(estimate);
+                } else {
+                    const field = document.createElement('textarea');
+                    field.value = estimate;
+                    field.style.position = 'fixed';
+                    field.style.opacity = '0';
+                    document.body.appendChild(field);
+                    field.select();
+                    const copied = document.execCommand('copy');
+                    field.remove();
+                    if (!copied) throw new Error('copy failed');
+                }
+                closeSheet();
+                showToast('Смета скопирована — вставьте её в MAX');
+                window.open('https://max.ru/', '_blank', 'noopener');
+            } catch (e) {
+                showToast('Не удалось открыть отправку. Скопируйте смету кнопкой рядом.');
+            }
+        }
+
+        function shareToWhatsApp() {
+            const text = encodeURIComponent(generateEstimateText());
+            closeSheet();
+            // Сначала пробуем открыть установленное приложение, затем — официальный web fallback.
+            window.location.href = 'whatsapp://send?text=' + text;
+            window.setTimeout(() => {
+                window.location.href = 'https://api.whatsapp.com/send?text=' + text;
+            }, 900);
+        }
+
+        function shareToTelegram() {
+            const text = encodeURIComponent(generateEstimateText());
+            closeSheet();
+            window.location.href = 'tg://msg?text=' + text;
+            window.setTimeout(() => {
+                window.location.href = 'https://t.me/share/url?text=' + text;
+            }, 900);
+        }
+
+        let reviewRating = 5;
+        function openReviewSheet() {
+            reviewRating = 5;
+            document.getElementById('sheetTitle').innerText = 'Оставить отзыв';
+            document.getElementById('sheetBody').innerHTML = `
+                <p class="text-sm text-zinc-600">Оцените ГолосМастера и напишите, что можно улучшить.</p>
+                <div class="flex justify-center gap-2 py-2" aria-label="Оценка от 1 до 5">
+                    ${[1,2,3,4,5].map(n => `<button type="button" onclick="setReviewRating(${n})" id="reviewStar${n}" class="text-3xl leading-none text-violet-500 active:scale-90 transition" aria-label="${n} из 5">★</button>`).join('')}
+                </div>
+                <textarea id="reviewText" rows="4" placeholder="Ваш отзыв или пожелания…" class="w-full p-4 rounded-2xl bg-[#F4F4F6] border border-zinc-200 text-sm text-zinc-950 outline-none focus:border-zinc-400"></textarea>
+                <button onclick="submitReview()" class="w-full p-4 rounded-2xl cal-btn-black font-extrabold text-xs uppercase tracking-wider">Поделиться отзывом</button>
+                <p class="text-[11px] text-zinc-500 text-center">Отзыв подготовится для отправки через меню вашего устройства или будет скопирован.</p>
+            `;
+            showSheet();
+            updateReviewStars();
+        }
+
+        function setReviewRating(value) {
+            reviewRating = Math.max(1, Math.min(5, Number(value) || 5));
+            updateReviewStars();
+        }
+
+        function updateReviewStars() {
+            for (let n = 1; n <= 5; n++) {
+                const star = document.getElementById('reviewStar' + n);
+                if (star) star.style.color = n <= reviewRating ? '#6366F1' : '#D4D4D8';
+            }
+        }
+
+        async function submitReview() {
+            const feedback = `Отзыв о ГолосМастере\nОценка: ${reviewRating}/5\n${(document.getElementById('reviewText')?.value || '').trim()}`;
+            try {
+                if (navigator.share) {
+                    await navigator.share({ title: 'Отзыв о ГолосМастере', text: feedback });
+                    closeSheet();
+                    return;
+                }
+                const field = document.createElement('textarea');
+                field.value = feedback;
+                field.style.position = 'fixed'; field.style.opacity = '0';
+                document.body.appendChild(field); field.select();
+                const copied = document.execCommand('copy'); field.remove();
+                if (!copied) throw new Error('copy failed');
+                closeSheet();
+                showToast('Отзыв скопирован — можно отправить разработчику');
+            } catch (e) {
+                if (e && e.name === 'AbortError') return;
+                showToast('Не удалось поделиться отзывом. Попробуйте ещё раз.');
+            }
         }
 
         function openShareSheet() {
-            const text = generateEstimateText();
-            const encoded = encodeURIComponent(text);
-
-            document.getElementById('sheetTitle').innerText = 'Отправить смету клиенту';
+            document.getElementById('sheetTitle').innerText = 'Отправить клиенту';
             document.getElementById('sheetBody').innerHTML = `
                 <div class="space-y-2.5">
-                    <button onclick="shareToMAX()" class="w-full p-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-md">
-                        <span>📲 Отправить в мессенджер MAX</span>
-                    </button>
-                    <a href="https://t.me/share/url?url=${encoded}" target="_blank" onclick="closeSheet()" class="w-full p-4 rounded-2xl bg-zinc-950 text-white font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-2">
-                        <span>✈️ Отправить в Telegram</span>
-                    </a>
-                    <a href="https://wa.me/?text=${encoded}" target="_blank" onclick="closeSheet()" class="w-full p-4 rounded-2xl bg-emerald-600 text-white font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-2">
-                        <span>💬 Отправить в WhatsApp</span>
-                    </a>
-                    <button onclick="closeSheet(); copyTextEstimate();" class="w-full p-4 rounded-2xl bg-[#F4F4F6] text-zinc-950 border border-zinc-200 font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-2">
-                        <span>📋 Просто скопировать текст</span>
-                    </button>
-                    <button onclick="closeSheet(); printOfficialEstimate();" class="w-full p-4 rounded-2xl bg-[#F4F4F6] text-zinc-950 border border-zinc-200 font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-2">
-                        <span>📄 Открыть официальный PDF-бланк</span>
-                    </button>
+                    <button onclick="shareToWhatsApp()" class="share-btn share-whatsapp w-full p-4 rounded-2xl text-white font-extrabold text-xs uppercase tracking-wider">WhatsApp</button>
+                    <button onclick="shareToTelegram()" class="share-btn share-telegram w-full p-4 rounded-2xl text-white font-extrabold text-xs uppercase tracking-wider">Telegram</button>
+                    <button onclick="shareToMax()" class="share-btn share-max w-full p-4 rounded-2xl text-white font-extrabold text-xs uppercase tracking-wider">MAX</button>
                 </div>
             `;
             showSheet();
-        }
-
-        async function shareToMAX() {
-            trackGoal('share_to_max');
-            const text = generateEstimateText();
-            copyToClipboardSilent(text);
-
-            if (navigator.share) {
-                try {
-                    await navigator.share({ title: `Смета: ${getCurrentProject().name}`, text: text });
-                    closeSheet();
-                    return;
-                } catch (err) {}
-            }
-            closeSheet();
-            showToast('📋 Смета скопирована! Вставьте её в чат MAX');
-        }
-
-        let selectedFeedbackRate = '👍 Удобно';
-
-        function selectFeedbackRate(rate, btnEl) {
-            selectedFeedbackRate = rate;
-            document.querySelectorAll('.fb-rate-chip').forEach(el => {
-                el.className = 'fb-rate-chip flex-1 py-2.5 px-2 rounded-xl bg-[#F4F4F6] text-zinc-700 border border-zinc-200 font-bold text-xs transition';
-            });
-            if (btnEl) {
-                btnEl.className = 'fb-rate-chip flex-1 py-2.5 px-2 rounded-xl bg-zinc-950 text-white font-extrabold text-xs transition shadow-sm';
-            }
-        }
-
-        function openFeedbackModal() {
-            trackGoal('open_feedback_modal');
-            selectedFeedbackRate = '👍 Удобно';
-            document.getElementById('sheetTitle').innerText = 'Обратная связь';
-            document.getElementById('sheetBody').innerHTML = `
-                <p class="text-xs text-zinc-500 font-semibold">Помогите сделать «ГолосМастера» ещё удобнее для работы на объекте. Что добавить или исправить?</p>
-                <div>
-                    <label class="text-xs font-extrabold text-zinc-500 uppercase">Как вам приложение?</label>
-                    <div class="flex gap-1.5 mt-1.5">
-                        <button type="button" onclick="selectFeedbackRate('👍 Удобно', this)" class="fb-rate-chip flex-1 py-2.5 px-2 rounded-xl bg-zinc-950 text-white font-extrabold text-xs transition shadow-sm">👍 Удобно</button>
-                        <button type="button" onclick="selectFeedbackRate('💡 Есть идея', this)" class="fb-rate-chip flex-1 py-2.5 px-2 rounded-xl bg-[#F4F4F6] text-zinc-700 border border-zinc-200 font-bold text-xs transition">💡 Идея</button>
-                        <button type="button" onclick="selectFeedbackRate('🐞 Ошибка', this)" class="fb-rate-chip flex-1 py-2.5 px-2 rounded-xl bg-[#F4F4F6] text-zinc-700 border border-zinc-200 font-bold text-xs transition">🐞 Ошибка</button>
-                    </div>
-                </div>
-                <div>
-                    <label class="text-xs font-extrabold text-zinc-500 uppercase">Ваше сообщение или предложение</label>
-                    <textarea id="fbMessageInput" rows="3" placeholder="Напишите, каких функций не хватает на стройке..." class="w-full mt-1.5 p-3.5 rounded-2xl bg-[#F4F4F6] border border-zinc-200 text-zinc-950 text-sm font-semibold focus:outline-none focus:border-zinc-950"></textarea>
-                </div>
-                <div>
-                    <label class="text-xs font-extrabold text-zinc-500 uppercase">Ваш контакт (по желанию)</label>
-                    <input id="fbContactInput" placeholder="Телефон или ник в MAX / Telegram" class="w-full mt-1.5 p-3.5 rounded-2xl bg-[#F4F4F6] border border-zinc-200 text-zinc-950 text-sm font-bold">
-                </div>
-                <div class="space-y-2 pt-1">
-                    <button onclick="submitFeedback()" class="w-full p-4 rounded-2xl cal-btn-black font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-2">
-                        <span>🚀 Отправить отзыв</span>
-                    </button>
-                </div>
-            `;
-            showSheet();
-        }
-
-        async function submitFeedback() {
-            const msg = document.getElementById('fbMessageInput')?.value.trim();
-            const contact = document.getElementById('fbContactInput')?.value.trim();
-            if (!msg) {
-                showToast('Напишите хотя бы пару слов!');
-                return;
-            }
-
-            const feedbackEntry = {
-                date: new Date().toLocaleString('ru-RU'),
-                rate: selectedFeedbackRate,
-                message: msg,
-                contact: contact || 'Не указан'
-            };
-
-            // Подготовка к отправке в облачную базу/личное сообщение (архитектурный крюк)
-            // Когда подключим бэкенд, сюда добавится fetch('https://your-api.com/feedback', { method: 'POST', body: JSON.stringify(feedbackEntry) })
-
-            try {
-                const existing = JSON.parse(localStorage.getItem(FEEDBACK_STORAGE_KEY) || '[]');
-                existing.push(feedbackEntry);
-                localStorage.setItem(FEEDBACK_STORAGE_KEY, JSON.stringify(existing));
-            } catch (e) {}
-
-            const formattedFeedback = `💬 ОТЗЫВ «ГолосМастера» (v0.72)\nОценка: ${feedbackEntry.rate}\nТекст: ${feedbackEntry.message}\nКонтакт: ${feedbackEntry.contact}`;
-            copyToClipboardSilent(formattedFeedback);
-            trackGoal('feedback_submitted');
-
-            closeSheet();
-            showToast('🚀 Спасибо! Отзыв успешно сохранен');
         }
 
         function openAdvanceModal() {
@@ -1096,7 +1000,7 @@
 
         function saveAdvance() {
             const proj = getCurrentProject();
-            proj.advance = parseInt(document.getElementById('shAdvInput').value) || 0;
+            proj.advance = Math.max(0, parseFloat(document.getElementById('shAdvInput').value) || 0);
             closeSheet();
             saveState();
             showToast('Аванс обновлен');
@@ -1107,7 +1011,7 @@
             const listHtml = state.projects.map(p => `
                 <div class="p-3.5 rounded-2xl ${p.id === state.currentProjectId ? 'bg-zinc-950 text-white' : 'bg-[#F4F4F6] text-zinc-950'} flex justify-between items-center">
                     <div onclick="selectProject('${p.id}')" class="flex-1 cursor-pointer">
-                        <div class="font-extrabold text-sm">${p.name}</div>
+                        <div class="font-extrabold text-sm">${escapeHtml(p.name)}</div>
                         <div class="text-xs opacity-70 mt-0.5">Позиций: ${p.items.length}</div>
                     </div>
                     ${state.projects.length > 1 ? `<button onclick="deleteProject('${p.id}')" class="p-2 opacity-60 hover:opacity-100"><i data-lucide="trash-2" class="w-4 h-4"></i></button>` : ''}
@@ -1209,7 +1113,7 @@
             const t = document.getElementById('proToast');
             document.getElementById('proToastText').innerText = text;
             t.classList.remove('hidden');
-            setTimeout(() => t.classList.add('hidden'), 3200);
+            setTimeout(() => t.classList.add('hidden'), 3000);
         }
 
         loadState();
