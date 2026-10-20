@@ -649,37 +649,85 @@
             const raw = input.value.trim();
             if (!raw) { showToast('Введите текст!'); return; }
 
-            const numbers = raw.match(/\d+(?:[.,]\d+)?/g);
-            let qty = 1, price = 0;
-            if (numbers && numbers.length >= 2) {
-                qty = parseFloat(numbers[numbers.length - 2].replace(',', '.'));
-                price = parseFloat(numbers[numbers.length - 1].replace(',', '.'));
-            } else if (numbers && numbers.length === 1) {
-                price = parseFloat(numbers[0].replace(',', '.'));
+            // Разбираем каждую позицию отдельно, а исправления цены применяем к последней позиции.
+            const normalized = raw
+                .replace(/[\r\n]+/g, '. ')
+                .replace(/\s+/g, ' ')
+                .replace(/\b(ещ[её]|также|потом)\s+/gi, '. ')
+                .replace(/\s*(?:;|\u2022)\s*/g, '. ');
+            const clauses = normalized.split(/[.!?]+/).map(s => s.trim()).filter(Boolean);
+            const parsed = [];
+            const correctionPattern = /(?:нет|исправь|поправь|измени|замени|вместо этого|не\s+\w+)[^\d]{0,45}(?:цен[ауеы]?\s*)?(?:на\s*)?(\d+(?:[.,]\d+)?)/i;
+
+            function numberValue(value) {
+                return Number(String(value).replace(',', '.'));
+            }
+            function parseClause(clause) {
+                const lower = clause.toLowerCase();
+                const nums = [...clause.matchAll(/\d+(?:[.,]\d+)?/g)].map(m => ({ value: numberValue(m[0]), index: m.index, text: m[0] }));
+                if (!nums.length) return null;
+
+                const priceMatch = clause.match(/(?:по\s*)?(\d+(?:[.,]\d+)?)\s*(?:руб(?:лей|ля|ль)?\.?|₽|р\.?)(?:\s*(?:за|\/\s*)\s*(?:квадрат|м²|м2|метр|шт|точк)[а-я.]*)?/i);
+                const quantityMatch = clause.match(/(\d+(?:[.,]\d+)?)\s*(квадрат(?:ов|а)?|м²|м2|кв\.?\s*м|метр(?:ов|а)?|точ(?:ек|ки|ка)|меш(?:ков|ка|ок)|канистр(?:ы|а|)|бухт(?:ы|а|)|штук|шт\.?|пог(?:онных)?\s*метр(?:ов|а)?|м\.п\.?)/i);
+                let qty = 1, unit = 'шт.', price = 0;
+                if (quantityMatch) {
+                    qty = numberValue(quantityMatch[1]);
+                    const u = quantityMatch[2].toLowerCase();
+                    if (/квадрат|м²|м2|кв\.?\s*м|метр/.test(u) && !/пог/.test(u)) unit = 'м²';
+                    else if (/пог|м\.п/.test(u)) unit = 'м.п.';
+                    else if (/точ/.test(u)) unit = 'точка';
+                    else if (/меш/.test(u)) unit = 'мешк.';
+                    else if (/канистр/.test(u)) unit = 'канистра';
+                    else if (/бухт/.test(u)) unit = 'бухта';
+                    else unit = 'шт.';
+                } else {
+                    const first = nums[0];
+                    qty = first.value;
+                    if (nums.length > 1) unit = 'шт.';
+                }
+
+                if (priceMatch) price = numberValue(priceMatch[1]);
+                else if (nums.length >= 2) price = nums[nums.length - 1].value;
+                else price = nums[0].value;
+
+                let name = clause
+                    .replace(/\b(?:нет|исправь|поправь|измени|замени)\b[^.!?]*/ig, '')
+                    .replace(/\b(?:по\s*)?\d+(?:[.,]\d+)?\s*(?:руб(?:лей|ля|ль)?\.?|₽|р\.?)(?:\s*(?:за|\/\s*)\s*(?:квадрат|м²|м2|метр|шт|точк)[а-я.]*)?/ig, ' ')
+                    .replace(/\d+(?:[.,]\d+)?\s*(?:квадрат(?:ов|а)?|м²|м2|кв\.?\s*м|метр(?:ов|а)?|точ(?:ек|ки|ка)|меш(?:ков|ка|ок)|канистр(?:ы|а|)|бухт(?:ы|а|)|штук|шт\.?|пог(?:онных)?\s*метр(?:ов|а)?|м\.п\.?)/ig, ' ')
+                    .replace(/\b(?:по|за|рублей|рубля|руб|цена|цену|квадрат|квадрата|квадратов)\b/ig, ' ')
+                    .replace(/\d+(?:[.,]\d+)?/g, ' ')
+                    .replace(/\s+/g, ' ').trim();
+                name = name.replace(/^(?:ещ[её]|также|потом)\s+/i, '').trim();
+                if (!name || name.length < 2) return null;
+
+                const materialPattern = /\b(меш(?:ок|ка|ки|ков)?|ротбанд|кабель|клей|канистр\w*|бухт\w*|смесь|грунтовка глубокого проникновения|материал)\b/i;
+                const type = materialPattern.test(clause) ? 'material' : 'work';
+                return { type, name: name.charAt(0).toLocaleUpperCase('ru-RU') + name.slice(1), qty, unit, price };
             }
 
-            const lower = raw.toLowerCase();
-            let unit = 'м²';
-            if (lower.includes('точ')) unit = 'точка';
-            else if (lower.includes('меш')) unit = 'мешк.';
-            else if (lower.includes('бухт')) unit = 'бухта';
-            else if (lower.includes('канист') || lower.includes('л')) unit = 'канистра';
-            else if (lower.includes('шт')) unit = 'шт.';
-            else if (lower.includes('пог') || lower.includes('м.п')) unit = 'м.п.';
+            for (const clause of clauses) {
+                const correction = clause.match(correctionPattern);
+                if (correction && parsed.length) {
+                    parsed[parsed.length - 1].price = numberValue(correction[1]);
+                    continue;
+                }
+                const item = parseClause(clause);
+                if (item) parsed.push(item);
+            }
 
-            const matKeywords = ['меш', 'ротбанд', 'кабель', 'клей', 'грунтовк', 'канист', 'бухт', 'смесь'];
-            const isMaterial = matKeywords.some(k => lower.includes(k));
-
-            let cleanName = raw.replace(/\bпо\s+\d+.*/i, '').replace(/\d+\s*(квадратов|квадрата|м2|м²|точек|точки|мешков|мешка|шт|штук|канистры|канистр|бухты|рублей|руб|р).*/i, '').trim();
-            if (!cleanName || cleanName.length < 2) cleanName = raw;
-            else cleanName = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
+            if (!parsed.length) {
+                showToast('Не удалось разобрать позиции. Текст сохранён — проверьте его и попробуйте ещё раз.');
+                return;
+            }
 
             const proj = getCurrentProject();
-            proj.items.unshift({ id: Date.now(), type: isMaterial ? 'material' : 'work', name: cleanName, qty, unit, price });
-
+            const now = Date.now();
+            parsed.reverse().forEach((item, index) => {
+                proj.items.unshift({ id: now + index, ...item });
+            });
             input.value = '';
             saveState();
-            showToast(`Добавлено: ${cleanName}`);
+            showToast(`Добавлено позиций: ${parsed.length}`);
         }
 
         let modalSelectedType = 'work';
@@ -913,7 +961,18 @@
             summaryHtml += `<div style="display:flex; justify-content:space-between; font-size: 16px; font-weight: 800; margin-top: 4px;"><span>ОСТАТОК К ОПЛАТЕ:</span><span>${calc.balance.toLocaleString('ru-RU')} ₽</span></div></div>`;
 
             document.getElementById('pdfSummaryBlock').innerHTML = summaryHtml;
-            window.print();
+
+            // В некоторых встроенных браузерах (включая отдельные версии WebView) window.print отсутствует.
+            // Не теряем смету: проверяем поддержку печати и сообщаем пользователю, если среда её не предоставляет.
+            try {
+                if (typeof window.print !== 'function') {
+                    showToast('Печать PDF не поддерживается в этом окне. Откройте ГолосМастер в браузере и нажмите PDF ещё раз.');
+                    return;
+                }
+                window.print();
+            } catch (error) {
+                showToast('Не удалось открыть печать PDF. Откройте приложение в браузере и повторите попытку.');
+            }
         }
 
         function generateEstimateText() {
