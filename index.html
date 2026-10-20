@@ -680,10 +680,15 @@
                     else if (/канистр/.test(u)) unit = 'канистра';
                     else if (/бухт/.test(u)) unit = 'бухта';
                     else unit = 'шт.';
+                } else if (nums.length >= 2) {
+                    // Если единица не распознана, два числа обычно означают количество и цену.
+                    qty = nums[0].value;
+                    unit = 'шт.';
                 } else {
-                    const first = nums[0];
-                    qty = first.value;
-                    if (nums.length > 1) unit = 'шт.';
+                    // Одно число без количества — это цена, а не количество.
+                    // Иначе фраза «Покрасить стены по 300 рублей» превращалась бы в 300 шт. × 300 ₽.
+                    qty = 1;
+                    unit = 'шт.';
                 }
 
                 if (priceMatch) price = numberValue(priceMatch[1]);
