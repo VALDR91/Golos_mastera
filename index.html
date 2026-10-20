@@ -282,7 +282,7 @@
     </div>
 
     <!-- ТОСТ -->
-    <div id="proToast" class="no-print fixed top-16 left-1/2 -translate-x-1/2 z-50 hidden bg-zinc-950 text-white px-5 py-3.5 rounded-full text-xs font-extrabold shadow-2xl flex items-center gap-2 whitespace-nowrap border border-zinc-700">
+    <div id="proToast" role="status" aria-live="polite" class="no-print fixed top-16 left-3 right-3 mx-auto w-fit max-w-[calc(100vw-1.5rem)] z-50 hidden bg-zinc-950 text-white px-4 py-3 rounded-2xl text-xs font-extrabold shadow-2xl flex items-start gap-2 whitespace-normal break-words border border-zinc-700">
         <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400 shrink-0"></i>
         <span id="proToastText">Готово!</span>
     </div>
@@ -654,7 +654,9 @@
             const normalized = raw
                 .replace(/[\r\n]+/g, '. ')
                 .replace(/\s+/g, ' ')
-                .replace(/(^|\s)(ещ[её]|также|потом)\s+/gi, '$1. ')
+                .replace(/(^|\s)(ещ[её]|также|потом|затем)\s+/gi, '$1. ')
+                // Если распознавание речи потеряло «ещё», разделяем типичную следующую позицию-материал после цены предыдущей позиции.
+                .replace(/(руб(?:лей|ля|ль)?\.?|₽|р\.?)\s+(?=(?:грунтовк\w*|шпакл[её]вк\w*|плиточн\w+\s+кле\w*|кабел\w*|ротбанд\w*|смес\w*|краск\w*|обо\w*|ламинат\w*|плинтус\w*|герметик\w*)\b)/gi, '$1. ')
                 .replace(/\s*(?:;|\u2022)\s*/g, '. ');
             const clauses = normalized.split(/[.!?]+/).map(s => s.trim()).filter(Boolean);
             const parsed = [];
@@ -1006,10 +1008,37 @@
             }
 
             showToast('Готовим PDF…');
-            html2pdf().set(pdfOptions).from(exportNode).save()
-                .then(() => {
+            html2pdf().set(pdfOptions).from(exportNode).outputPdf('blob')
+                .then(async (pdfBlob) => {
                     exportNode.remove();
-                    showToast('PDF сформирован. Проверьте загрузки или меню скачивания.');
+                    const file = new File([pdfBlob], pdfOptions.filename, { type: 'application/pdf' });
+
+                    // В мобильных WebView скачивание может не открывать файл.
+                    // Сначала предлагаем системное меню отправки/сохранения, если оно поддерживает PDF.
+                    if (navigator.canShare && navigator.share && navigator.canShare({ files: [file] })) {
+                        try {
+                            await navigator.share({ files: [file], title: 'Смета PDF' });
+                            showToast('PDF готов — выберите приложение для сохранения или отправки.');
+                            return;
+                        } catch (shareError) {
+                            if (shareError && shareError.name === 'AbortError') {
+                                showToast('Сохранение PDF отменено.');
+                                return;
+                            }
+                            console.warn('Системное меню не открылось, пробуем скачать PDF', shareError);
+                        }
+                    }
+
+                    const blobUrl = URL.createObjectURL(pdfBlob);
+                    const link = document.createElement('a');
+                    link.href = blobUrl;
+                    link.download = pdfOptions.filename;
+                    link.style.display = 'none';
+                    document.body.appendChild(link);
+                    link.click();
+                    link.remove();
+                    setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+                    showToast('PDF подготовлен. Если файл не открылся, проверьте загрузки или меню «Поделиться».');
                 })
                 .catch((error) => {
                     exportNode.remove();
