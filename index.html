@@ -6,6 +6,7 @@
     <title>ГолосМастера — сметчик</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://st.max.ru/js/max-web-app.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=Inter:wght@500;600;700;800&family=JetBrains+Mono:wght@600;700;800&display=swap" rel="stylesheet">
     <style>
@@ -967,17 +968,54 @@
 
             document.getElementById('pdfSummaryBlock').innerHTML = summaryHtml;
 
-            // В некоторых встроенных браузерах (включая отдельные версии WebView) window.print отсутствует.
-            // Не теряем смету: проверяем поддержку печати и сообщаем пользователю, если среда её не предоставляет.
-            try {
-                if (typeof window.print !== 'function') {
-                    showToast('Печать PDF не поддерживается в этом окне. Откройте ГолосМастер в браузере и нажмите PDF ещё раз.');
-                    return;
-                }
-                window.print();
-            } catch (error) {
-                showToast('Не удалось открыть печать PDF. Откройте приложение в браузере и повторите попытку.');
+            // Формируем настоящий PDF без вызова системного диалога печати:
+            // он часто недоступен во встроенных браузерах мессенджеров.
+            const source = document.getElementById('printDocument');
+            const exportNode = source.cloneNode(true);
+            exportNode.id = 'pdfExportDocument';
+            exportNode.style.display = 'block';
+            exportNode.style.position = 'fixed';
+            exportNode.style.left = '-10000px';
+            exportNode.style.top = '0';
+            exportNode.style.width = '794px';
+            exportNode.style.boxSizing = 'border-box';
+            exportNode.style.padding = '32px';
+            exportNode.style.background = '#ffffff';
+            exportNode.style.color = '#000000';
+            exportNode.style.fontFamily = 'Arial, sans-serif';
+            exportNode.style.zIndex = '-1';
+            document.body.appendChild(exportNode);
+
+            const safeProjectName = String(proj.name || 'Смета')
+                .replace(/[\\/:*?"<>|]+/g, '-')
+                .replace(/\s+/g, '-')
+                .slice(0, 60) || 'Смета';
+            const pdfOptions = {
+                margin: [8, 8, 8, 8],
+                filename: 'Смета-' + safeProjectName + '.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', scrollX: 0, scrollY: 0, windowWidth: 900 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                pagebreak: { mode: ['css', 'legacy'] }
+            };
+
+            if (typeof html2pdf !== 'function') {
+                exportNode.remove();
+                showToast('Не загрузился модуль создания PDF. Проверьте интернет и повторите попытку.');
+                return;
             }
+
+            showToast('Готовим PDF…');
+            html2pdf().set(pdfOptions).from(exportNode).save()
+                .then(() => {
+                    exportNode.remove();
+                    showToast('PDF сформирован. Проверьте загрузки или меню скачивания.');
+                })
+                .catch((error) => {
+                    exportNode.remove();
+                    console.error('Не удалось сформировать PDF', error);
+                    showToast('Не удалось сформировать PDF. Проверьте интернет и повторите попытку.');
+                });
         }
 
         function generateEstimateText() {
