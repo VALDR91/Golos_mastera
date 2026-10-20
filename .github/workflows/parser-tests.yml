@@ -1,0 +1,24 @@
+name: Parser tests
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main, fix/parser-and-pdf-max]
+
+permissions:
+  contents: read
+
+jobs:
+  parser-tests:
+    name: Parser regression tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Run parser regression tests
+        run: node --test tests/parser.test.cjs
