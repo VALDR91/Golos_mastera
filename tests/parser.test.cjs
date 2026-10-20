@@ -95,3 +95,18 @@ test('splits adjacent positions when speech recognition omits the word “ещё
   assert.equal(primer.price, 100);
   assert.equal(primer.type, 'material');
 });
+
+test('splits positions when a comma separates the price and next material', () => {
+  const result = runParser('Шпаклёвка стен 25 квадратов по 600 рублей, грунтовка 40 квадратов по 100 рублей');
+  assert.equal(result.project.items.length, 2);
+  const wallPutty = result.project.items.find((item) => /шпаклёвка стен/i.test(item.name));
+  const primer = result.project.items.find((item) => /грунтовка/i.test(item.name));
+  assert.ok(wallPutty);
+  assert.ok(primer);
+  assert.equal(wallPutty.qty, 25);
+  assert.equal(wallPutty.price, 600);
+  assert.equal(wallPutty.type, 'work');
+  assert.equal(primer.qty, 40);
+  assert.equal(primer.price, 100);
+  assert.equal(primer.type, 'material');
+});
