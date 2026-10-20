@@ -700,7 +700,7 @@
                 name = name.replace(/^(?:ещ[её]|также|потом)\s+/i, '').trim();
                 if (!name || name.length < 2) return null;
 
-                const materialPattern = /\b(меш(?:ок|ка|ки|ков)?|ротбанд|кабель|клей|канистр\w*|бухт\w*|смесь|грунтовк\\w*|материал)\b/i;
+                const materialPattern = /\b(меш(?:ок|ка|ки|ков)?|ротбанд|кабель|клей|канистр\w*|бухт\w*|смесь|грунтовк\w*|материал)\b/i;
                 const type = materialPattern.test(clause) ? 'material' : 'work';
                 return { type, name: name.charAt(0).toLocaleUpperCase('ru-RU') + name.slice(1), qty, unit, price };
             }
