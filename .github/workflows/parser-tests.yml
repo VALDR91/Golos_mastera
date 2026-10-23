@@ -1,4 +1,4 @@
-name: Parser tests
+name: Regression tests
 
 on:
   pull_request:
@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   parser-tests:
-    name: Parser regression tests
+    name: Parser and PDF regression tests
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
@@ -20,5 +20,5 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Run parser regression tests
-        run: node --test tests/parser.test.cjs
+      - name: Run regression tests
+        run: node --test
