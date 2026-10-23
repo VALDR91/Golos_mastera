@@ -63,12 +63,14 @@ function calculateTotals(project) {
 }
 
 function createHarness({
-  project = sampleProject(), pdfBlob = makePdfFixture(), html2pdfEnabled = true, navigatorOverrides = {},
+  project = sampleProject(), pdfBlob = makePdfFixture(), pdfData = null, html2pdfEnabled = true,
+  navigatorOverrides = {}, windowOverrides = {},
   pdfGenerationError = null, objectUrlError = null, linkClickError = null,
 } = {}) {
   const messages = [];
   const timers = new Map();
   const revokedUrls = [];
+  const objectUrls = [];
   const appendedNodes = [];
   const clicks = [];
   const createdLinks = [];
@@ -78,6 +80,7 @@ function createHarness({
   let nextObjectUrl = 1;
   let generatorCalls = 0;
   let capturedOptions = null;
+  let capturedOutputType = null;
   let capturedExportNode = null;
   let sourceCloneCount = 0;
 
@@ -131,16 +134,18 @@ function createHarness({
   };
   const context = {
     document,
-    window: { requestAnimationFrame(callback) { callback(); } },
+    window: { requestAnimationFrame(callback) { callback(); }, ...windowOverrides },
     navigator,
     Blob,
     File: class TestFile extends Blob {
       constructor(parts, name, options) { super(parts, options); this.name = name; }
     },
     URL: {
-      createObjectURL() {
+      createObjectURL(blob) {
         if (objectUrlError) throw objectUrlError;
-        return `blob:test-${nextObjectUrl++}`;
+        const url = `blob:test-${nextObjectUrl++}`;
+        objectUrls.push({ url, blob });
+        return url;
       },
       revokeObjectURL(url) { revokedUrls.push(url); },
     },
@@ -168,9 +173,10 @@ function createHarness({
         set(options) { capturedOptions = options; return worker; },
         from(node) { capturedExportNode = node; return worker; },
         outputPdf(type) {
-          assert.equal(type, 'blob');
+          capturedOutputType = type;
+          assert.equal(type, 'arraybuffer');
           if (pdfGenerationError) return Promise.reject(pdfGenerationError);
-          return Promise.resolve(pdfBlob);
+          return pdfData === null ? pdfBlob.arrayBuffer() : Promise.resolve(pdfData);
         },
       };
       return worker;
@@ -181,7 +187,7 @@ function createHarness({
   vm.runInContext(`${pdfSource}\nthis.pdfApi = {
     validateEstimateForPdf, buildPdfFileName, buildOfficialEstimateHtml,
     waitForPdfRenderReady, positionPdfCaptureClone, createEstimatePdfBlob,
-    downloadEstimatePdf, deliverEstimatePdf, printOfficialEstimate
+    downloadEstimatePdf, isMaxWebView, deliverEstimatePdf, printOfficialEstimate
   };`, context);
 
   return {
@@ -191,12 +197,14 @@ function createHarness({
     messages,
     timers,
     revokedUrls,
+    objectUrls,
     appendedNodes,
     clicks,
     createdLinks,
     shares,
     get generatorCalls() { return generatorCalls; },
     get capturedOptions() { return capturedOptions; },
+    get capturedOutputType() { return capturedOutputType; },
     get capturedExportNode() { return capturedExportNode; },
     get sourceCloneCount() { return sourceCloneCount; },
     runTimers() {
@@ -245,10 +253,11 @@ test('empty and malformed estimates stop before PDF generation with a clear mess
   assert.match(malformed.messages.at(-1), /некорректная позиция/i);
 });
 
-test('PDF creation waits for layout, relocates the html2canvas clone, validates the PDF signature, and cleans up', async () => {
+test('PDF creation converts exact binary bytes to an application/pdf Blob and cleans up', async () => {
   const harness = createHarness();
   assert.equal(await harness.api.printOfficialEstimate(), true);
   assert.equal(harness.generatorCalls, 1);
+  assert.equal(harness.capturedOutputType, 'arraybuffer');
   assert.equal(harness.capturedExportNode.id, 'pdfExportDocument');
   assert.match(harness.capturedExportNode.innerHTML, /Укладка плитки/);
   assert.match(harness.capturedExportNode.innerHTML, /Клей плиточный/);
@@ -270,6 +279,11 @@ test('PDF creation waits for layout, relocates the html2canvas clone, validates 
   assert.equal(clonedDocument.body.style.overflow, 'visible');
   assert.equal(harness.messages.at(-1), 'Запрос на скачивание отправлен. Проверьте папку «Загрузки».');
   assert.equal(harness.clicks.length, 1);
+  assert.equal(harness.objectUrls[0].blob.type, 'application/pdf');
+  const downloadedBytes = Buffer.from(await harness.objectUrls[0].blob.arrayBuffer());
+  const expectedBytes = Buffer.from(await makePdfFixture().arrayBuffer());
+  assert.equal(downloadedBytes.subarray(0, 5).toString('ascii'), '%PDF-');
+  assert.deepEqual(downloadedBytes, expectedBytes);
 });
 
 test('invalid PDF data is rejected and the temporary export node is removed', async () => {
@@ -288,6 +302,15 @@ test('invalid PDF data is rejected and the temporary export node is removed', as
   assert.match(noPage.messages.at(-1), /повреждён или пуст/i);
 });
 
+test('PDF syntax returned as a string is rejected before download or share', async () => {
+  const harness = createHarness({ pdfData: '%PDF-1.4\n1 0 obj\n<< /Type /Page >>\nendobj\n%%EOF' });
+  assert.equal(await harness.api.printOfficialEstimate(), false);
+  assert.equal(harness.capturedOutputType, 'arraybuffer');
+  assert.equal(harness.objectUrls.length, 0);
+  assert.equal(harness.clicks.length, 0);
+  assert.match(harness.messages.at(-1), /повреждён или пуст/i);
+});
+
 test('PDF generator rejection is reported and temporary DOM is cleaned up', async () => {
   const harness = createHarness({ pdfGenerationError: new Error('canvas failed') });
   assert.equal(await harness.api.printOfficialEstimate(), false);
@@ -303,7 +326,7 @@ test('missing html2pdf library is reported without leaking the export node', asy
   assert.match(harness.messages.at(-1), /модуль создания PDF не загрузился/i);
 });
 
-test('supported navigator.share receives an application/pdf File and success is described as handoff', async () => {
+test('supported navigator.share receives exact PDF bytes in an application/pdf File', async () => {
   let sharedFile;
   const harness = createHarness({ navigatorOverrides: {
     canShare: ({ files }) => files[0].type === 'application/pdf',
@@ -312,6 +335,10 @@ test('supported navigator.share receives an application/pdf File and success is 
   assert.equal(await harness.api.printOfficialEstimate(), true);
   assert.equal(sharedFile.name, 'Смета-Кухня-&-ванная.pdf');
   assert.equal(sharedFile.type, 'application/pdf');
+  const sharedBytes = Buffer.from(await sharedFile.arrayBuffer());
+  const expectedBytes = Buffer.from(await makePdfFixture().arrayBuffer());
+  assert.equal(sharedBytes.subarray(0, 5).toString('ascii'), '%PDF-');
+  assert.deepEqual(sharedBytes, expectedBytes);
   assert.equal(harness.clicks.length, 0);
   assert.match(harness.messages.at(-1), /передан в меню отправки/i);
   assert.doesNotMatch(harness.messages.at(-1), /сохранён/i);
@@ -325,6 +352,16 @@ test('cancelled navigator.share is not called a success and does not trigger a f
   assert.equal(await harness.api.printOfficialEstimate(), false);
   assert.equal(harness.clicks.length, 0);
   assert.equal(harness.messages.at(-1), 'Экспорт PDF отменён.');
+});
+
+test('MAX without file sharing does not use the unsupported blob href download', async () => {
+  const harness = createHarness({ windowOverrides: {
+    WebApp: { platform: 'android', downloadFile() {} },
+  } });
+  assert.equal(await harness.api.printOfficialEstimate(), false);
+  assert.equal(harness.clicks.length, 0);
+  assert.equal(harness.objectUrls.length, 0);
+  assert.match(harness.messages.at(-1), /MAX не скачивает PDF по локальной ссылке/i);
 });
 
 test('failed share falls back to download and releases its object URL after the click', async () => {
