@@ -1028,8 +1028,15 @@
                 error.code = 'PDF_ENGINE_MISSING';
                 throw error;
             }
-            const pdfBlob = await html2pdf().set(pdfOptions).from(exportNode).outputPdf('blob');
-            if (!pdfBlob || typeof pdfBlob.size !== 'number' || typeof pdfBlob.slice !== 'function' || pdfBlob.size < 20) {
+            const pdfData = await html2pdf().set(pdfOptions).from(exportNode).outputPdf('arraybuffer');
+            const isArrayBuffer = Object.prototype.toString.call(pdfData) === '[object ArrayBuffer]';
+            if ((!isArrayBuffer && !ArrayBuffer.isView(pdfData)) || pdfData.byteLength < 20) {
+                const error = new Error('PDF_INVALID');
+                error.code = 'PDF_INVALID';
+                throw error;
+            }
+            const pdfBlob = new Blob([pdfData], { type: 'application/pdf' });
+            if (pdfBlob.type !== 'application/pdf' || pdfBlob.size < 20) {
                 const error = new Error('PDF_INVALID');
                 error.code = 'PDF_INVALID';
                 throw error;
@@ -1077,6 +1084,10 @@
             return 'download';
         }
 
+        function isMaxWebView() {
+            return Boolean(window.WebApp && ['ios', 'android', 'desktop'].includes(window.WebApp.platform));
+        }
+
         async function deliverEstimatePdf(pdfBlob, filename) {
             let file = null;
             let canShareFile = false;
@@ -1101,6 +1112,10 @@
                     }
                     console.warn('Системное меню не открылось, пробуем скачать PDF', shareError);
                 }
+            }
+            if (isMaxWebView()) {
+                showToast('MAX не скачивает PDF по локальной ссылке. Откройте приложение в браузере, чтобы скачать файл.');
+                return 'unsupported';
             }
             return downloadEstimatePdf(pdfBlob, filename);
         }
@@ -1164,7 +1179,7 @@
 
             try {
                 const deliveryResult = await deliverEstimatePdf(pdfBlob, filename);
-                return deliveryResult !== 'cancelled';
+                return deliveryResult === 'shared' || deliveryResult === 'download';
             } catch (error) {
                 console.error('PDF сформирован, но передать файл не удалось', error);
                 showToast('PDF сформирован, но не удалось передать файл или начать скачивание.');
